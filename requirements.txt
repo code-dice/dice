@@ -1,0 +1,6 @@
+PyYAML
+requests
+pylint
+pep8
+coverage
+tox
