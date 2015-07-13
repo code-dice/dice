@@ -1,7 +1,7 @@
-import types
+import logging
 import random
 import string
-import logging
+import types
 
 from . import base
 

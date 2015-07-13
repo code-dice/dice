@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
-import os
 import io
-import glob
 import logging
+import os
 import subprocess
+
 from setuptools import setup
 from setuptools.command.test import test
+
 import dice
 
 

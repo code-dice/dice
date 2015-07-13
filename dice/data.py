@@ -1,12 +1,12 @@
-import os
-import re
-import random
 import inspect
 import logging
+import os
+import random
+import re
 import types
 
-from .utils import rnd
 from .utils import base
+from .utils import rnd
 
 
 logger = logging.getLogger(__name__)

@@ -1,11 +1,11 @@
-import os
 import errno
-import time
 import fcntl
+import os
+import random
 import select
 import signal
-import random
 import subprocess
+import time
 
 
 class CmdResult(object):

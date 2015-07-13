@@ -1,8 +1,8 @@
-import os
-import yaml
-import copy
 import ast
+import copy
+import os
 import random
+import yaml
 
 from . import trace
 

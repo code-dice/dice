@@ -1,8 +1,8 @@
+import inspect
+import logging
+import random
 import sys
 import types as mod_types
-import random
-import logging
-import inspect
 
 from . import data
 

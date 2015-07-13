@@ -1,8 +1,8 @@
-import os
-import imp
 import fnmatch
-import inspect
+import imp
 import importlib
+import inspect
+import os
 
 from . import constraint
 

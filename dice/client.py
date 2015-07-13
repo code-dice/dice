@@ -1,15 +1,15 @@
-import re
-import os
-import sys
-import time
-import json
-import curses
-import random
-import logging
-import StringIO
-import requests
 import argparse
+import curses
+import json
+import logging
+import os
+import random
+import re
+import requests
+import StringIO
+import sys
 import threading
+import time
 
 from collections import Counter
 
