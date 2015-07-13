@@ -5,7 +5,6 @@ import random
 import re
 import types
 
-from .utils import base
 from .utils import rnd
 
 
@@ -194,18 +193,6 @@ class UnsignedInt(Integer):
 
 class PositiveInt(Integer):
     bound = (1, None)
-
-
-class PID(PositiveInt):
-    bound = (1, int(open('/proc/sys/kernel/pid_max').read()))
-
-
-class ActivePID(PID):
-    dynamic_list = staticmethod(base.pids)
-
-
-class ActiveKernelPID(ActivePID):
-    dynamic_list = staticmethod(base.kernel_pids)
 
 
 class Pair(Data):
