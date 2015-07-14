@@ -1,9 +1,32 @@
+import os
 import random
+import string
 
 
 class Symbol(object):
-    def __init__(self, sym_type, exc_types=None):
-        self.type = sym_type
+    pass
+
+
+class Bytes(Symbol):
+    def __init__(self, exc_types=None):
+        pass
+
+    def model(self):
+        cnt = int(random.expovariate(0.1))
+        return ''.join(bt for bt in os.urandom(cnt) if bt != b'\x00')
+
+
+class String(Symbol):
+    def __init__(self, exc_types=None):
+        pass
+
+    def model(self):
+        cnt = int(random.expovariate(0.1))
+        return ''.join(random.choice(string.printable) for _ in xrange(cnt))
+
+
+class Integer(Symbol):
+    def __init__(self, exc_types=None):
         self.value = None
         self.maximum = None
         self.minimum = None
@@ -18,7 +41,7 @@ class Symbol(object):
             maximum = 'Inf'
         if self.minimum is None:
             minimum = '-Inf'
-        return '<%s %s~%s>' % (self.type, minimum, maximum)
+        return '<%s %s~%s>' % (self.__class__.__name__, minimum, maximum)
 
     def model(self):
         scale = 50.0

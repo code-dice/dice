@@ -50,36 +50,37 @@ class Trace(object):
         if left not in symbols:
             if comparator == 'Integer':
                 if op != 'IsNot':
-                    symbols[left] = symbol.Symbol('Integer')
+                    symbols[left] = symbol.Integer()
                 else:
-                    symbols[left] = symbol.Symbol('Bytes', exc_types=['Integer'])
+                    symbols[left] = symbol.Bytes(exc_types=['Integer'])
             elif isinstance(comparator, int):
-                symbols[left] = symbol.Symbol('Integer')
+                symbols[left] = symbol.Integer()
             else:
                 raise Exception('Unexpected comparator %s' % comparator)
         sleft = symbols[left]
+        sleft_type = sleft.__class__.__name__
 
         if op == 'Is':
-            if sleft.type != comparator:
-                raise Exception('Unmatched type %s. Should be %s' % (comparator, sleft.type))
+            if sleft_type != comparator:
+                raise Exception('Unmatched type %s. Should be %s' % (comparator, sleft_type))
         elif op == 'IsNot':
-            if sleft.type == comparator:
-                raise Exception('Unmatched type. Should not be %s' % sleft.type)
+            if sleft_type == comparator:
+                raise Exception('Unmatched type. Should not be %s' % sleft_type)
         elif op == 'Eq':
             sleft.value = comparator
         elif op == 'NotEq':
             sleft.exc.append(comparator)
         elif op == 'Lt':
-            if sleft.type == 'Integer':
+            if sleft_type == 'Integer':
                 sleft.maximum = comparator - 1
         elif op == 'LtE':
-            if sleft.type == 'Integer':
+            if sleft_type == 'Integer':
                 sleft.maximum = comparator
         elif op == 'Gt':
-            if sleft.type == 'Integer':
+            if sleft_type == 'Integer':
                 sleft.minimum = comparator + 1
         elif op == 'GtE':
-            if sleft.type == 'Integer':
+            if sleft_type == 'Integer':
                 sleft.minimum = comparator
         else:
             raise TraceSolveError('Unknown operator: %s' % op)
