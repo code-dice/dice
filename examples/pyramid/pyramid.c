@@ -1,12 +1,27 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
+#include <errno.h>
 
 int main(int argc, char **argv) {
     int a[1000];
     int i;
     long idx;
+    char *endptr, *str;
 
-    idx = atoi(argv[1]);
+    str = argv[1];
+
+    idx = strtol(str, &endptr, 10);
+
+    if (errno == ERANGE && idx == LONG_MAX) {
+        fprintf(stderr, "Error: Number overflow");
+        return 1;
+    }
+
+    if (str == endptr) {
+        fprintf(stderr, "Error: Invalid number");
+        return 1;
+    }
 
     if (idx > 1000) {
         fprintf(stderr, "Error: Max input is 1000");
