@@ -1,5 +1,5 @@
 import argparse
-import curses
+import collections
 import json
 import logging
 import os
@@ -14,6 +14,7 @@ import time
 from collections import Counter
 
 from . import provider
+from . import window
 from .utils import rnd
 
 logger = logging.getLogger('dice')
@@ -69,6 +70,15 @@ class DiceApp(object):
             "unexpected_neg": Counter(),
             "unexpected_pass": Counter(),
         }
+        self.queues = {
+            "skip": {},
+            "failure": {},
+            "success": {},
+            "timeout": {},
+            "expected_neg": {},
+            "unexpected_neg": {},
+            "unexpected_pass": {},
+        }
         self.counters = {
             "cnt": 0,
             "skip": 0,
@@ -79,6 +89,7 @@ class DiceApp(object):
             "unexpected_neg": 0,
             "unexpected_pass": 0,
         }
+        self.QUEUE_MAX = 100
         self.exiting = False
         self.pause = False
         self.setting_watch = False
@@ -92,8 +103,18 @@ class DiceApp(object):
         self.send_queue = []
         self.last_item = None
         self.cur_counter = 'failure'
-        self.screen = curses.initscr()
+        self.window = window.Window(self)
+        self.window.stat_panel.set_select_callback(self._update_items)
+        self.window.items_panel.set_select_callback(self._update_content)
         self.stream = StringIO.StringIO()
+        self.cur_class = (None, None)
+        self.cur_item = (None, None)
+
+    def _update_items(self, cat_name, item_idx):
+        self.cur_class = (cat_name, item_idx)
+
+    def _update_content(self, cat_name, item_idx):
+        self.cur_item = (cat_name, item_idx)
 
     def _stat_result(self, item):
         """
@@ -111,190 +132,34 @@ class DiceApp(object):
             if self.watching and self.watching in res.stderr:
                 self.pause = True
 
+            key = res.stderr
+            catalog = None
             if fail_patts:
                 if res.exit_status == 'success':
-                    self.counters['unexpected_pass'] += 1
-                    self.stats['unexpected_pass'][res.stderr] += 1
+                    catalog = 'unexpected_pass'
                 elif res.exit_status == 'failure':
                     found = False
                     for patt in fail_patts:
                         if re.search(patt, res.stderr):
-                            self.counters['expected_neg'] += 1
-                            self.stats['expected_neg'][patt] += 1
+                            catalog = 'expected_neg'
+                            key = patt
                             found = True
                             break
                     if not found:
-                        self.counters['unexpected_neg'] += 1
-                        self.stats['unexpected_neg'][res.stderr] += 1
+                        catalog = 'unexpected_neg'
             else:
                 if res.exit_status == 'success':
-                    self.counters['success'] += 1
-                    self.stats['success'][res.stderr] += 1
+                    catalog = 'success'
                 elif res.exit_status == 'failure':
-                    self.stats['failure'][res.stderr] += 1
-                    self.counters['failure'] += 1
+                    catalog = 'failure'
         else:
             self.counters['skip'] += 1
 
-    def _show_report(self):
-        """
-        Show the most frequent pattern of a specified result type depends on
-        the expected failure patterns.
-        """
-        maxy, maxx = self.screen.getmaxyx()
-        width, height = maxx / 2, maxy
-
-        cnt = self.counters["cnt"]
-
-        cur_y = 1
-        item_id = 0
-        pad = curses.newpad(height, width)
-        stat_cnt = self.counters[self.cur_counter]
-        for err, c in self.stats[self.cur_counter].most_common(30):
-            pad.addstr(cur_y, 1, str(c))
-            pad.addstr(cur_y, 6, "%6.2f" % (float(c) * 100 / stat_cnt))
-
-            style = curses.A_BOLD if bool(item_id % 2) else curses.A_DIM
-            for line in err.splitlines():
-                if len(line) > (width - 17):
-                    line = line[:(width - 17)]
-                pad.addstr(cur_y, 15, line, style)
-                cur_y += 1
-                if cur_y == height:
-                    break
-            if cur_y == height:
-                break
-            item_id += 1
-        pad.box()
-        title = self.cur_counter.replace('_', ' ').upper()
-        pad.addstr(0, 10, ' MOST FREQUENT %s ' % title)
-        if cnt:
-            pad.addstr(0, 2, '%.2f%%' % (float(stat_cnt) / cnt * 100))
-        pad.refresh(0, 0, 0, 0, height, width)
-
-    def _show_log(self):
-        maxy, maxx = self.screen.getmaxyx()
-        width, height = maxx / 2, maxy
-
-        cur_y = 1
-        pad = curses.newpad(height, width)
-        lines = self.stream.getvalue().splitlines()
-        for line in lines[-(height - 2):]:
-            if len(line) > (width - 2):
-                line = line[:(width - 2)]
-            pad.addstr(cur_y, 1, line)
-            cur_y += 1
-        pad.box()
-        pad.refresh(0, 0, 0, 0, height, width)
-
-    def _show_last_result(self):
-        """
-        Show last result of tested items
-        """
-        maxy, maxx = self.screen.getmaxyx()
-        width, height = maxx / 2, maxy
-
-        pad = curses.newpad(height, width)
-        item = self.last_item
-        if item:
-            lines = ''
-            lines = str(item.res)
-            if item.fail_patts:
-                lines += 'fail patterns:\n'
-                for patt in item.fail_patts:
-                    lines += '  %s\n' % patt
-
-            if self.scroll_y < 0:
-                self.scroll_y = 0
-            if self.scroll_x < 0:
-                self.scroll_x = 0
-            lines = lines.splitlines()[self.scroll_y:]
-            cur_y = 1
-            for line in lines:
-                line = line.replace('\t', '  ')
-                if len(line) > width - 2 + self.scroll_x:
-                    line = line[self.scroll_x:(width - 2 + self.scroll_x)]
-                else:
-                    line = line[self.scroll_x:]
-                pad.addstr(cur_y, 1, line)
-                cur_y += 1
-                if cur_y == height:
-                    break
-        pad.box()
-        pad.addstr(0, 10, ' LAST RESULT ')
-        pad.refresh(0, 0, 0, maxx / 2, maxy, maxx)
-
-    def _monitor_key(self):
-        """
-        Monitor key press
-        """
-        ch = self.screen.getch()
-        if ch == ord('q'):
-            self.exiting = True
-        elif ch == ord('p'):
-            self.pause = not self.pause
-        elif ch == ord('n'):
-            idx = self.stats.keys().index(self.cur_counter)
-            new_idx = (idx + 1) % len(self.stats)
-            self.cur_counter = self.stats.keys()[new_idx]
-        elif ch == ord('N'):
-            idx = self.stats.keys().index(self.cur_counter)
-            new_idx = (idx - 1) % len(self.stats)
-            self.cur_counter = self.stats.keys()[new_idx]
-        elif ch == ord('w'):
-            self.pause = True
-            self.setting_watch = True
-        elif ch == ord('l'):
-            self.show_log = not self.show_log
-        elif ch == ord('s'):
-            self.last_item.save('saved_item.txt')
-        elif ch == curses.KEY_UP:
-            self.scroll_y -= 1
-        elif ch == curses.KEY_DOWN:
-            self.scroll_y += 1
-        elif ch == curses.KEY_LEFT:
-            self.scroll_x -= 1
-        elif ch == curses.KEY_RIGHT:
-            self.scroll_x += 1
-
-    def _show_watch_setting(self):
-        """
-        Show watch setup window
-        """
-        maxy, maxx = self.screen.getmaxyx()
-        width, height = max(len(self.watching) + 10, 20), 3
-
-        pad = curses.newpad(height, width)
-        pad.box()
-        pad.addstr(0, 10, ' WATCH ')
-        pad.addstr(1, 5, self.watching)
-        pad.refresh(0, 0, (maxy - height) / 2, (maxx - width) / 2,
-                    (maxy + height) / 2, (maxx + width) / 2)
-
-    def _monitor_watch_input(self):
-        ch = self.screen.getch()
-        if ch != -1:
-            if ch == ord('\n'):
-                self.setting_watch = False
-                self.pause = False
-            elif ch == curses.KEY_BACKSPACE:
-                if self.watching:
-                    self.watching = self.watching[:-1]
-            else:
-                self.watching += chr(ch)
-
-    def _show_exit(self):
-        """
-        Show existing pad in the center of screen
-        """
-        maxy, maxx = self.screen.getmaxyx()
-        width, height = 20, 3
-
-        pad = curses.newpad(height, width)
-        pad.box()
-        pad.addstr(1, 5, 'EXISTING...')
-        pad.refresh(0, 0, (maxy - height) / 2, (maxx - width) / 2,
-                    (maxy + height) / 2, (maxx + width) / 2)
+        self.counters[catalog] += 1
+        self.stats[catalog][key] += 1
+        if key not in self.queues[catalog]:
+            self.queues[catalog][key] = collections.deque([], self.QUEUE_MAX)
+        self.queues[catalog][key].append(res)
 
     def _process_providers(self):
         """
@@ -355,6 +220,43 @@ class DiceApp(object):
                 while self.pause and not self.exiting:
                     time.sleep(0.5)
 
+    def update_window(self):
+        # Set statistics panel content
+        panel = self.window.stat_panel
+        panel.clear()
+        for cat_name in self.stats:
+            for key, cnt in self.stats[cat_name].most_common(10):
+                bundle = {'key': key, 'count': cnt}
+                panel.add_item(bundle, catalog=cat_name)
+
+        # Set items panel content
+        panel = self.window.items_panel
+        panel.clear()
+        cat_name, item_idx = self.cur_class
+        if cat_name is not None and item_idx is not None:
+            item_name, cnt = self.stats[cat_name].most_common(10)[item_idx]
+            try:
+                for item in self.queues[cat_name][item_name]:
+                    bundle = {'item': item.cmdline}
+                    panel.add_item(bundle)
+            except RuntimeError:
+                pass
+
+        # Set detail panel content
+        panel = self.window.detail_panel
+        panel.clear()
+        cat_name, item_idx = self.cur_class
+        if cat_name is not None and item_idx is not None:
+            item_name, cnt = self.stats[cat_name].most_common(10)[item_idx]
+            items = self.queues[cat_name][item_name]
+
+            item_name, item_idx = self.cur_item
+            if item_name is not None and item_idx is not None:
+                bundle = items[self.cur_item[1]]
+                panel.set_content(bundle)
+
+        self.window.update()
+
     def run(self):
         """
         Main loop to update screen and send tests results.
@@ -368,28 +270,13 @@ class DiceApp(object):
 
         os.environ["EDITOR"] = "echo"
         last_thread = None
-        curses.noecho()
-        curses.cbreak()
-        curses.curs_set(0)
-        self.screen.keypad(1)
-        self.screen.timeout(100)
-        self.screen.refresh()
 
         self.last_item = None
         self.test_thread.start()
 
         try:
             while True:
-                if self.setting_watch:
-                    self._show_watch_setting()
-                    self._monitor_watch_input()
-                else:
-                    if self.show_log:
-                        self._show_log()
-                    else:
-                        self._show_report()
-                    self._show_last_result()
-                    self._monitor_key()
+                self.update_window()
 
                 if len(self.send_queue) > 200:
                     if last_thread:
@@ -408,10 +295,5 @@ class DiceApp(object):
             pass
         finally:
             self.exiting = True
-            self._show_exit()
             self.test_thread.join()
-            curses.nocbreak()
-            self.screen.keypad(0)
-            curses.curs_set(1)
-            curses.echo()
-            curses.endwin()
+            self.window.destroy()
