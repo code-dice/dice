@@ -33,9 +33,11 @@ class Data(object):
     def __new__(cls, *args, **kwargs):
         new_instance = object.__new__(cls, *args, **kwargs)
         if 'generate' not in cls.__dict__:
-            new_instance.generate = types.MethodType(Data.generate, new_instance)
+            new_instance.generate = types.MethodType(
+                Data.generate, new_instance)
         if 'validate' not in cls.__dict__:
-            new_instance.validate = types.MethodType(Data.validate, new_instance)
+            new_instance.validate = types.MethodType(
+                Data.validate, new_instance)
         return new_instance
 
     @classmethod
@@ -133,7 +135,7 @@ class Data(object):
 
 class String(Data):
     def validate(self, obj):
-        return isinstance(obj, types.StringType)
+        return isinstance(obj, str)
 
     def generate(self):
         return rnd.text()
@@ -197,11 +199,11 @@ class PositiveInt(Integer):
 
 class Pair(Data):
     def validate(self, obj):
-        if not isinstance(obj, types.TupleType):
+        if not isinstance(obj, tuple):
             return False
         if len(obj) != 2:
             return False
-        return all([isinstance(elem, types.StringType)
+        return all([isinstance(elem, str)
                     for elem in obj])
 
     def generate(self):

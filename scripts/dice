@@ -23,13 +23,14 @@ def info(exctype, value, tb):
         import traceback
         # We are NOT in interactive mode, print the exception...
         traceback.print_exception(exctype, value, tb)
-        print
+        print()
         # ...then start the debugger in post-mortem mode.
         pdb.pm()
 
 # Override exception hook to jump into pdb when exception
 sys.excepthook = info
 
+# pylint: disable=import-error
 from dice.client import DiceApp  # NOQA
 
 if __name__ == '__main__':

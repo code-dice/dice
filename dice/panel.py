@@ -88,7 +88,9 @@ class TextPanel(Panel):
 
         if active:
             self.pad.box()
-        self.pad.refresh(0, 0, self.y, self.x, self.y + self.height, self.x + self.width)
+        self.pad.refresh(0, 0,
+                         self.y, self.x,
+                         self.y + self.height, self.x + self.width)
 
     def on_keypress(self, ch):
         pass
@@ -164,7 +166,9 @@ class ListPanel(Panel):
                         self.pad.println(self.format(item), style=item_style)
         if active:
             self.pad.box()
-        self.pad.refresh(0, 0, self.y, self.x, self.y + self.height, self.x + self.width)
+        self.pad.refresh(0, 0,
+                         self.y, self.x,
+                         self.y + self.height, self.x + self.width)
 
     def on_keypress(self, ch):
         if ch == ord('j'):
@@ -176,7 +180,7 @@ class ListPanel(Panel):
             if item_idx < len(cat.items) - 1:
                 item_idx += 1
             else:
-                cat_idx = cats.index(cat_name)
+                cat_idx = list(cats).index(cat_name)
                 cat_name = cats[(cat_idx + 1) % len(cats)]
                 item_idx = 0
             self.select(cat_name, item_idx)
@@ -189,7 +193,7 @@ class ListPanel(Panel):
             if item_idx > 0:
                 item_idx -= 1
             else:
-                cat_idx = cats.index(cat_name)
+                cat_idx = list(cats).index(cat_name)
                 cat_name = cats[(cat_idx - 1) % len(cats)]
                 item_idx = 0
             self.select(cat_name, item_idx)

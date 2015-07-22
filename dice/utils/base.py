@@ -33,14 +33,15 @@ class CmdResult(object):
         """
         _, tty_w = subprocess.check_output(['stty', 'size']).split()
 
-        fmt_str = '\033[94m%%-%ds\033[93m%%-3s\033[0m%4%.3f' % (int(tty_w) - 16)
+        fmt_str = ('\033[94m%%-%ds\033[93m%%-3s\033[0m%4%.3f' %
+                   (int(tty_w) - 16))
 
-        print fmt_str % (
-            self.cmdline, self.exit_status, self.call_time)
+        print(fmt_str % (
+            self.cmdline, self.exit_status, self.call_time))
         for line in self.stdout.splitlines():
-            print line
+            print(line)
         for line in self.stderr.splitlines():
-            print '\033[91m%s\033[0m' % line
+            print('\033[91m%s\033[0m' % line)
 
 
 def weighted_choice(choices):
@@ -127,7 +128,7 @@ def run(cmdline, timeout=10):
                 err_lines = process.stderr.read()
                 if err_lines:
                     result.stderr += err_lines
-            except IOError, detail:
+            except IOError as detail:
                 if detail.errno != errno.EAGAIN:
                     raise detail
 

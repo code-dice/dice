@@ -22,7 +22,7 @@ class String(Symbol):
 
     def model(self):
         cnt = int(random.expovariate(0.1))
-        return ''.join(random.choice(string.printable) for _ in xrange(cnt))
+        return ''.join(random.choice(string.printable) for _ in range(cnt))
 
 
 class Integer(Symbol):

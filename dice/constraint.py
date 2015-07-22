@@ -13,7 +13,8 @@ class ConstraintError(Exception):
 
 class Constraint(object):
 
-    def __init__(self, name, depends_on=None, assume=None, target=None, tree=None):
+    def __init__(self, name,
+                 depends_on=None, assume=None, target=None, tree=None):
         self.name = name
         self.depends_on = depends_on
         self.assume = assume

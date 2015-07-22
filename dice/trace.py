@@ -1,6 +1,10 @@
 import ast
+import logging
 
 from dice import symbol
+
+
+logger = logging.getLogger(__name__)
 
 
 class TraceError(Exception):
@@ -62,10 +66,13 @@ class Trace(object):
 
         if op == 'Is':
             if sleft_type != comparator:
-                raise Exception('Unmatched type %s. Should be %s' % (comparator, sleft_type))
+                raise Exception(
+                    'Unmatched type %s. Should be %s' %
+                    (comparator, sleft_type))
         elif op == 'IsNot':
             if sleft_type == comparator:
-                raise Exception('Unmatched type. Should not be %s' % sleft_type)
+                raise Exception(
+                    'Unmatched type. Should not be %s' % sleft_type)
         elif op == 'Eq':
             sleft.value = comparator
         elif op == 'NotEq':
@@ -95,4 +102,4 @@ class Trace(object):
                 res_self = symbols['self'].model()
                 return res_self
             else:
-                print 'Unknown node type:', node
+                logger.error('Unknown node type: %s', type(node))

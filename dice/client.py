@@ -1,12 +1,12 @@
 import argparse
 import collections
+import io
 import json
 import logging
 import os
 import random
 import re
 import requests
-import StringIO
 import sys
 import threading
 import time
@@ -106,7 +106,7 @@ class DiceApp(object):
         self.window = window.Window(self)
         self.window.stat_panel.set_select_callback(self._update_items)
         self.window.items_panel.set_select_callback(self._update_content)
-        self.stream = StringIO.StringIO()
+        self.stream = io.StringIO()
         self.cur_class = (None, None)
         self.cur_item = (None, None)
 
@@ -204,7 +204,7 @@ class DiceApp(object):
                                  os.path.abspath(html_path))
                 else:
                     logger.debug(response.text)
-        except requests.ConnectionError, detail:
+        except requests.ConnectionError as detail:
             logger.debug('Failed to send result to server: %s', detail)
 
     def run_tests(self):

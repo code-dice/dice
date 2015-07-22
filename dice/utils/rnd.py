@@ -1,9 +1,11 @@
 import logging
 import random
 import string
-import types
 
 from . import base
+
+
+logger = logging.getLogger(__name__)
 
 
 def cpuset(min_inc=0, max_inc=100, max_len=1000, used_vcpu=None):
@@ -11,7 +13,7 @@ def cpuset(min_inc=0, max_inc=100, max_len=1000, used_vcpu=None):
 
     cpus = []
     cpusets = set()
-    for _ in xrange(cnt):
+    for _ in range(cnt):
         choice = random.randint(0, 2)
         if choice == 0:
             # Number
@@ -22,7 +24,7 @@ def cpuset(min_inc=0, max_inc=100, max_len=1000, used_vcpu=None):
             # Range
             upper = int_exp(min_inc, max_inc - 1)
             lower = int_exp(min_inc, upper)
-            cpusets.update(set(xrange(lower, upper + 1)))
+            cpusets.update(set(range(lower, upper + 1)))
             cpus.append('-'.join((str(lower), str(upper))))
         elif choice == 2:
             # Negation
@@ -36,7 +38,7 @@ def cpuset(min_inc=0, max_inc=100, max_len=1000, used_vcpu=None):
             cpus.append('^' + str(cpu))
 
         if not cpusets:
-            cpusets.update(set(xrange(min_inc, max_inc + 1)))
+            cpusets.update(set(range(min_inc, max_inc + 1)))
             cpus.append('-'.join((str(min_inc), str(max_inc))))
             for cpu in (used_vcpu & cpusets):
                 cpusets.discard(cpu)
@@ -93,14 +95,14 @@ def text(escape=False, min_len=5, max_len=10, charset=None, excludes=None):
 
     length = random.randint(min_len, max_len)
 
-    result_str = ''.join(random.choice(chars) for _ in xrange(length))
+    result_str = ''.join(random.choice(chars) for _ in range(length))
 
     if escape:
         return base.escape(result_str)
     else:
         return result_str
 
-ALL_CHARS = set(string.letters) - set('&\'"<>')
+ALL_CHARS = set(string.ascii_letters) - set('&\'"<>')
 # ALL_CHARS = set(string.printable)
 
 
@@ -131,13 +133,13 @@ def regex(re_str):
     def _randomize(stack):
         if len(stack) == 3:
             sub_stacks, cmin, cmax = stack
-            assert isinstance(sub_stacks, types.TupleType)
+            assert isinstance(sub_stacks, tuple)
             sub_stacks = random.choice(sub_stacks)
-            assert isinstance(sub_stacks, types.ListType)
+            assert isinstance(sub_stacks, list)
         elif len(stack) == 4:
             chose_str, cmin, cmax, neg = stack
             sub_stacks = None
-            assert isinstance(chose_str, types.StringType)
+            assert isinstance(chose_str, str)
             if neg:
                 chose_str = ''.join(ALL_CHARS - set(chose_str))
 
@@ -148,11 +150,11 @@ def regex(re_str):
 
         rnd_str = ""
         if sub_stacks is not None:
-            for _ in xrange(cnt):
+            for _ in range(cnt):
                 for sub_stack in sub_stacks:
                     rnd_str += _randomize(sub_stack)
         else:
-            for _ in xrange(cnt):
+            for _ in range(cnt):
                 rnd_str += random.choice(chose_str)
         return rnd_str
 
@@ -230,7 +232,7 @@ def regex(re_str):
                 elif counting == 'group':
                     _end_group(count_min, count_max)
                 else:
-                    logging.error("Unknown counting type %s", counting)
+                    logger.error("Unknown counting type %s", counting)
                 counting = None
                 continue
             if c in string.digits:
@@ -255,10 +257,10 @@ def regex(re_str):
                 elif counting == 'group':
                     _end_group(count_min, count_max)
                 else:
-                    logging.error("Unknown counting type %s", counting)
+                    logger.error("Unknown counting type %s", counting)
                 counting = None
                 continue
-            logging.error("Not handled counting character: %s", c)
+            logger.error("Not handled counting character: %s", c)
 
         if escaping:
             _end_chose(c, 1, 1)

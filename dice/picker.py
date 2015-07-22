@@ -2,7 +2,6 @@ import inspect
 import logging
 import random
 import sys
-import types as mod_types
 
 from . import data
 
@@ -100,7 +99,7 @@ class Picker(PickerBase):
                 res = data_type.generate()
             else:
                 res = None
-        except (ValueError, data.CanNotGenerateError), detail:
+        except (ValueError, data.CanNotGenerateError) as detail:
             raise PickImpossibleError(
                 "Can't generate data. Picking is impossible: %s" %
                 detail)
@@ -177,7 +176,8 @@ def pick(item, root=None):
     picker_classes = {root.__name__: root}
     logger.debug('Start picking')
     while True:
-        logger.debug('Current %s pickers: %s', len(picker_classes), picker_classes)
+        logger.debug('Current %s pickers: %s',
+                     len(picker_classes), picker_classes)
         picked_count = 0
         for name, picker_class in picker_classes.items():
             picker = picker_class(item)
@@ -186,9 +186,9 @@ def pick(item, root=None):
                 picked_count += 1
                 fail_patt = picker.pick()
                 if fail_patt:
-                    if isinstance(fail_patt, mod_types.StringType):
+                    if isinstance(fail_patt, str):
                         item.fail_patts.add(fail_patt)
-                    elif isinstance(fail_patt, mod_types.ListType):
+                    elif isinstance(fail_patt, list):
                         item.fail_patts |= set(fail_patt)
                 else:
                     if hasattr(picker_class, 'children'):
