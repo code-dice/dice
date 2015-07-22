@@ -1,5 +1,9 @@
 DICE
 ======================
+.. image:: https://travis-ci.org/Hao-Liu/dice.svg?branch=master
+    :target: https://travis-ci.org/Hao-Liu/dice
+.. image:: https://coveralls.io/repos/Hao-Liu/dice/badge.svg?branch=master&service=github
+  :target: https://coveralls.io/github/Hao-Liu/dice?branch=master
 
 dice is a random testing framework.
 
