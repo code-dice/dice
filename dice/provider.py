@@ -15,7 +15,7 @@ class Provider(object):
         if not os.path.isdir(path):
             raise ValueError("%s is not a directory." % path)
 
-        self.name = os.path.basename(path)
+        self.name = os.path.basename(os.path.normpath(path))
         self.path = path
 
         self.modules = {}
