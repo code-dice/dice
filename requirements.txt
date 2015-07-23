@@ -4,5 +4,5 @@ pylint
 pep8
 coverage
 tox
-futures
+future
 coveralls

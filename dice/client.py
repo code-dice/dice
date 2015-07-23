@@ -1,13 +1,16 @@
+from __future__ import print_function
 import argparse
 import collections
 import io
 import json
 import logging
 import os
+import queue
 import random
 import re
 import requests
 import sys
+import traceback
 import threading
 import time
 
@@ -18,6 +21,20 @@ from . import window
 from .utils import rnd
 
 logger = logging.getLogger('dice')
+
+
+class TestThread(threading.Thread):
+    def __init__(self, exc_queue, app, **kwargs):
+        threading.Thread.__init__(self, **kwargs)
+        self.exc_queue = exc_queue
+        self.app = app
+
+    def run(self):
+        try:
+            self.app.run_tests()
+        # pylint: disable=broad-except
+        except Exception:
+            self.exc_queue.put(sys.exc_info())
 
 
 class DiceApp(object):
@@ -97,12 +114,12 @@ class DiceApp(object):
         self.watching = ''
         self.scroll_x = 0
         self.scroll_y = 0
-        self.test_thread = threading.Thread(
-            target=self.run_tests,
-        )
+        self.test_excs = queue.Queue()
+        self.test_thread = TestThread(self.test_excs, self)
         self.send_queue = []
         self.last_item = None
         self.cur_counter = 'failure'
+
         self.window = window.Window(self)
         self.window.stat_panel.set_select_callback(self._update_items)
         self.window.items_panel.set_select_callback(self._update_content)
@@ -175,12 +192,12 @@ class DiceApp(object):
             sys.exit('Error: --providers option not specified')
         return providers
 
-    def send(self, queue):
+    def send(self, item_queue):
         """
         Serialize a list of test results and send them to remote server.
         """
         content = []
-        for item in queue:
+        for item in item_queue:
             content.append(item.serialize())
         data = json.dumps(content)
         headers = {}
@@ -291,9 +308,18 @@ class DiceApp(object):
 
                 if self.exiting:
                     break
+
+                if not self.test_thread.isAlive():
+                    break
         except KeyboardInterrupt:
             pass
         finally:
             self.exiting = True
-            self.test_thread.join()
             self.window.destroy()
+            self.test_thread.join()
+            try:
+                exc = self.test_excs.get(block=False)
+                for line in traceback.format_exception(*exc):
+                    print(line, end='')
+            except queue.Empty:
+                pass
