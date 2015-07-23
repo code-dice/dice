@@ -2,9 +2,12 @@ import fnmatch
 import imp
 import importlib
 import inspect
+import logging
 import os
 
 from . import constraint
+
+logger = logging.getLogger('dice')
 
 
 class Provider(object):
@@ -15,26 +18,24 @@ class Provider(object):
         self.name = os.path.basename(path)
         self.path = path
 
-        file_names = os.listdir(path)
-        if '__init__.py' not in file_names:
-            raise ValueError('__init__.py should exist in provider directory')
-
-        file_names.remove('__init__.py')
-        file_names.insert(0, '__init__.py')
-
         self.modules = {}
         for subdir in ['']:
             root = os.path.join(path, subdir)
-            files = [f
-                     for f in os.listdir(root)
+            files = [f for f in os.listdir(root)
                      if os.path.isfile(os.path.join(path, f))]
 
             relative_path = os.path.relpath(root, path)
             folders = os.path.split(relative_path)
             root_ns = '.'.join(
                 [folder for folder in folders if folder not in ['', '.']])
-            files.remove('__init__.py')
+
+            if '__init__.py' in files:
+                files.remove('__init__.py')
+
+            init_path = os.path.join(root, '__init__.py')
+            open(init_path, 'a').close()
             files.insert(0, '__init__.py')
+
             for file_name in fnmatch.filter(files, '*.py'):
                 mod_name, _ = os.path.splitext(file_name)
                 if mod_name == '__init__':
@@ -43,6 +44,11 @@ class Provider(object):
                 mod_ns = '.'.join(ns_list)
                 imp.load_source(mod_ns, os.path.join(root, file_name))
                 self.modules[mod_ns] = importlib.import_module(mod_ns)
+
+            try:
+                os.remove(init_path)
+            except IOError:
+                logger.warning('Failed to remove %s', init_path)
 
         mod_cls_map = {}
 
