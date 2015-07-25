@@ -142,15 +142,16 @@ class DiceApp(object):
         fail_patts = item.fail_patts
 
         self.counters['cnt'] += 1
+        key = res.stderr
+        catalog = None
         if res:
             if res.exit_status == 'timeout':
+                catalog = 'timeout'
                 self.counters['timeout'] += 1
 
             if self.watching and self.watching in res.stderr:
                 self.pause = True
 
-            key = res.stderr
-            catalog = None
             if fail_patts:
                 if res.exit_status == 'success':
                     catalog = 'unexpected_pass'
@@ -170,6 +171,7 @@ class DiceApp(object):
                 elif res.exit_status == 'failure':
                     catalog = 'failure'
         else:
+            catalog = 'skip'
             self.counters['skip'] += 1
 
         self.counters[catalog] += 1
