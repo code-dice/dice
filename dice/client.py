@@ -73,6 +73,13 @@ class DiceApp(object):
             dest='providers',
             default='',
         )
+        self.parser.add_argument(
+            '--no-ui',
+            action='store_false',
+            help="Don't show terminal interactive user interface.",
+            dest='ui',
+            default=True,
+        )
 
         self.args, _ = self.parser.parse_known_args()
 
@@ -117,12 +124,15 @@ class DiceApp(object):
         self.test_excs = queue.Queue()
         self.test_thread = TestThread(self.test_excs, self)
         self.send_queue = []
+        self.last_send_thread = None
         self.last_item = None
         self.cur_counter = 'failure'
 
-        self.window = window.Window(self)
-        self.window.stat_panel.set_select_callback(self._update_items)
-        self.window.items_panel.set_select_callback(self._update_content)
+        if self.args.ui:
+            self.window = window.Window(self)
+            self.window.stat_panel.set_select_callback(self._update_items)
+            self.window.items_panel.set_select_callback(self._update_content)
+
         self.stream = io.StringIO()
         self.cur_class = (None, None)
         self.cur_item = (None, None)
@@ -234,6 +244,18 @@ class DiceApp(object):
             item = random.choice(self.providers.values()).run_once()
             self.last_item = item
             self.send_queue.append(item)
+
+            if len(self.send_queue) > 200:
+                if self.last_send_thread:
+                    self.last_send_thread.join()
+                send_thread = threading.Thread(
+                    target=self.send,
+                    args=(self.send_queue,)
+                )
+                send_thread.start()
+                self.last_send_thread = send_thread
+                self.send_queue = []
+
             self._stat_result(item)
             if self.pause:
                 while self.pause and not self.exiting:
@@ -288,40 +310,32 @@ class DiceApp(object):
         logger.addHandler(shandler)
 
         os.environ["EDITOR"] = "echo"
-        last_thread = None
 
         self.last_item = None
-        self.test_thread.start()
-
-        try:
-            while True:
-                self.update_window()
-
-                if len(self.send_queue) > 200:
-                    if last_thread:
-                        last_thread.join()
-#                    send_thread = threading.Thread(
-#                        target=self.send,
-#                        args=(self.send_queue,)
-#                    )
-#                    send_thread.start()
-#                    last_thread = send_thread
-                    self.send_queue = []
-
-                if self.exiting:
-                    break
-
-                if not self.test_thread.isAlive():
-                    break
-        except KeyboardInterrupt:
-            pass
-        finally:
-            self.exiting = True
-            self.window.destroy()
-            self.test_thread.join()
+        if self.args.ui:
             try:
-                exc = self.test_excs.get(block=False)
-                for line in traceback.format_exception(*exc):
-                    print(line, end='')
-            except queue.Empty:
+                self.test_thread.start()
+                while True:
+                    if self.args.ui:
+                        self.update_window()
+
+                    if self.exiting:
+                        break
+
+                    if not self.test_thread.isAlive():
+                        break
+            except KeyboardInterrupt:
                 pass
+            finally:
+                if self.args.ui:
+                    self.window.destroy()
+                self.exiting = True
+                self.test_thread.join()
+                try:
+                    exc = self.test_excs.get(block=False)
+                    for line in traceback.format_exception(*exc):
+                        print(line, end='')
+                except queue.Empty:
+                    pass
+        else:
+            self.run_tests()
