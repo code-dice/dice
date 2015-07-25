@@ -40,6 +40,8 @@ class Constraint(object):
                 rev_test.ops = [ast.GtE()]
             elif isinstance(op, ast.Eq):
                 rev_test.ops = [ast.NotEq()]
+            elif isinstance(op, ast.In):
+                rev_test.ops = [ast.NotIn()]
             else:
                 raise ConstraintError('Unknown operator: %s' % op)
 

@@ -1,5 +1,6 @@
 import ast
 import logging
+import sys
 
 from dice import symbol
 
@@ -59,6 +60,14 @@ class Trace(object):
                     symbols[left] = symbol.Bytes(exc_types=['Integer'])
             elif isinstance(comparator, int):
                 symbols[left] = symbol.Integer()
+            elif isinstance(comparator, ast.Call):
+                func_name = comparator.func.attr
+                pkg_name = comparator.func.value.id
+                mod_name = '.'.join(['virsh', 'utils', pkg_name])
+                mod = sys.modules[mod_name]
+                func = getattr(mod, func_name)
+                res = func()
+                symbols[left] = symbol.Bytes(scope=res)
             else:
                 raise Exception('Unexpected comparator %s' % comparator)
         sleft = symbols[left]
@@ -89,6 +98,10 @@ class Trace(object):
         elif op == 'GtE':
             if sleft_type == 'Integer':
                 sleft.minimum = comparator
+        elif op == 'In':
+            pass
+        elif op == 'NotIn':
+            pass
         else:
             raise TraceSolveError('Unknown operator: %s' % op)
 

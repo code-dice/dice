@@ -8,12 +8,16 @@ class Symbol(object):
 
 
 class Bytes(Symbol):
-    def __init__(self, exc_types=None):
-        pass
+    def __init__(self, scope=None, exc_types=None):
+        self.scope = scope
+        self.exc_types = exc_types
 
     def model(self):
-        cnt = int(random.expovariate(0.1))
-        return ''.join(bt for bt in os.urandom(cnt) if bt != b'\x00')
+        if self.scope is None:
+            cnt = int(random.expovariate(0.1))
+            return ''.join(bt for bt in os.urandom(cnt) if bt != b'\x00')
+        else:
+            return random.choice(self.scope)
 
 
 class String(Symbol):
