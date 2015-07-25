@@ -45,7 +45,7 @@ class DiceApp(object):
             action='store',
             help='Server address',
             dest='server',
-            default='127.0.0.1',
+            default=None,
         )
         self.parser.add_argument(
             '--port',
@@ -243,18 +243,19 @@ class DiceApp(object):
         while not self.exiting:
             item = random.choice(self.providers.values()).run_once()
             self.last_item = item
-            self.send_queue.append(item)
 
-            if len(self.send_queue) > 200:
-                if self.last_send_thread:
-                    self.last_send_thread.join()
-                send_thread = threading.Thread(
-                    target=self.send,
-                    args=(self.send_queue,)
-                )
-                send_thread.start()
-                self.last_send_thread = send_thread
-                self.send_queue = []
+            if self.args.server is not None:
+                self.send_queue.append(item)
+                if len(self.send_queue) > 200:
+                    if self.last_send_thread:
+                        self.last_send_thread.join()
+                    send_thread = threading.Thread(
+                        target=self.send,
+                        args=(self.send_queue,)
+                    )
+                    send_thread.start()
+                    self.last_send_thread = send_thread
+                    self.send_queue = []
 
             self._stat_result(item)
             if self.pause:
