@@ -4,34 +4,52 @@ import string
 
 
 class Symbol(object):
-    pass
 
-
-class Bytes(Symbol):
-    def __init__(self, scope=None, exc_types=None):
+    def __init__(self, scope=None, excs=None, exc_types=None):
         self.scope = scope
+        self.excs = excs
         self.exc_types = exc_types
+
+    def generate(self):
+        raise NotImplementedError("Method 'generate' not implemented for %s" %
+                                  self.__class__.__name__)
 
     def model(self):
         if self.scope is None:
-            cnt = int(random.expovariate(0.1))
-            return ''.join(bt for bt in os.urandom(cnt) if bt != b'\x00')
+            res = self.generate()
+            if self.excs is not None:
+                while res in self.excs:
+                    res = self.generate()
+            return res
         else:
-            return random.choice(self.scope)
+            res = random.choice(self.scope)
+            if self.excs is not None:
+                while res in self.excs:
+                    res = random.choice(self.scope)
+            return res
+
+
+class Bytes(Symbol):
+    def generate(self):
+        cnt = int(random.expovariate(0.1))
+        return ''.join(bt for bt in os.urandom(cnt) if bt != b'\x00')
+
+
+class NonEmptyBytes(Symbol):
+    def generate(self):
+        cnt = int(random.expovariate(0.1)) + 1
+        return ''.join(bt for bt in os.urandom(cnt) if bt != b'\x00')
 
 
 class String(Symbol):
-    def __init__(self, exc_types=None):
-        pass
-
-    def model(self):
+    def generate(self):
         cnt = int(random.expovariate(0.1))
         return ''.join(random.choice(string.printable) for _ in range(cnt))
 
 
 class Integer(Symbol):
-    def __init__(self, exc_types=None):
-        self.value = None
+    def __init__(self, scope=None, excs=None, exc_types=None):
+        super(Integer, self).__init__(scope)
         self.maximum = None
         self.minimum = None
 
@@ -47,7 +65,7 @@ class Integer(Symbol):
             minimum = '-Inf'
         return '<%s %s~%s>' % (self.__class__.__name__, minimum, maximum)
 
-    def model(self):
+    def generate(self):
         scale = 50.0
         maximum = self.maximum
         minimum = self.minimum
