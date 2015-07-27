@@ -60,6 +60,8 @@ class Trace(object):
             comparator = comparator.id
         elif isinstance(comparator, ast.Num):
             comparator = comparator.n
+        elif isinstance(comparator, ast.Str):
+            comparator = comparator.s
 
         call_result = None
         if isinstance(comparator, ast.Call):
@@ -83,7 +85,7 @@ class Trace(object):
 
             if isinstance(test_obj, int):
                 symbols[left] = symbol.Integer()
-            elif isinstance(test_obj, str) or isinstance(test_obj, unicode):
+            elif isinstance(test_obj, str):
                 if test_obj in known_symbols:
                     if op != 'IsNot':
                         symbols[left] = getattr(symbol, test_obj)()
@@ -106,9 +108,16 @@ class Trace(object):
                 raise Exception(
                     'Unmatched type. Should not be %s' % sleft_type)
         elif op == 'Eq':
-            sleft.value = comparator
+            if sleft.scope and comparator not in sleft.scope:
+                raise Exception(
+                    'Unsatisfiable condition. Need equal to "%s", '
+                    'but scope is %s' % (comparator, sleft.scope)
+                )
+            sleft.scope = [comparator]
         elif op == 'NotEq':
-            sleft.exc.append(comparator)
+            if sleft.excs is None:
+                sleft.excs = []
+            sleft.excs.append(comparator)
         elif op == 'Lt':
             if sleft_type == 'Integer':
                 sleft.maximum = comparator - 1
