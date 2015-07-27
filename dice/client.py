@@ -5,6 +5,7 @@ import io
 import json
 import logging
 import os
+# pylint: disable=import-error
 import queue
 import random
 import re
@@ -13,8 +14,6 @@ import sys
 import traceback
 import threading
 import time
-
-from collections import Counter
 
 from . import provider
 from . import window
@@ -35,6 +34,30 @@ class TestThread(threading.Thread):
         # pylint: disable=broad-except
         except Exception:
             self.exc_queue.put(sys.exc_info())
+
+
+class TestStat(object):
+
+    def __init__(self, key, queue_max=100, method='exact'):
+        self.key = key
+        self.counter = 0
+        self.queue_max = queue_max
+        self.method = method
+        self.queue = collections.deque([], queue_max)
+
+    def match(self, text):
+        if self.method == 'exact':
+            return text == self.key
+        elif self.method == 'regex':
+            return re.match(self.key + '$', text)
+
+    def append(self, result):
+        self.counter += 1
+        self.queue.append(result)
+
+    def extend(self, stat):
+        for result in stat.queue:
+            self.append(result)
 
 
 class DiceApp(object):
@@ -86,15 +109,6 @@ class DiceApp(object):
         self.providers = self._process_providers()
 
         self.stats = {
-            "skip": Counter(),
-            "failure": Counter(),
-            "success": Counter(),
-            "timeout": Counter(),
-            "expected_neg": Counter(),
-            "unexpected_neg": Counter(),
-            "unexpected_pass": Counter(),
-        }
-        self.queues = {
             "skip": {},
             "failure": {},
             "success": {},
@@ -102,16 +116,6 @@ class DiceApp(object):
             "expected_neg": {},
             "unexpected_neg": {},
             "unexpected_pass": {},
-        }
-        self.counters = {
-            "cnt": 0,
-            "skip": 0,
-            "failure": 0,
-            "success": 0,
-            "timeout": 0,
-            "expected_neg": 0,
-            "unexpected_neg": 0,
-            "unexpected_pass": 0,
         }
         self.QUEUE_MAX = 100
         self.exiting = False
@@ -131,6 +135,8 @@ class DiceApp(object):
         if self.args.ui:
             self.window = window.Window(self)
             self.window.stat_panel.set_select_callback(self._update_items)
+            self.window.stat_panel.add_keypress_listener(
+                'merge_stat', 'm', self._merge_stat)
             self.window.items_panel.set_select_callback(self._update_content)
 
         self.stream = io.StringIO()
@@ -143,6 +149,24 @@ class DiceApp(object):
     def _update_content(self, cat_name, item_idx):
         self.cur_item = (cat_name, item_idx)
 
+    def _merge_stat(self, panel):
+        self.pause = True
+        cat_name, _ = panel.cur_key
+        text = self.window.get_input()
+        match_keys = []
+        for key in self.stats[cat_name]:
+            res = re.match(text, key)
+            if res is not None:
+                match_keys.append(key)
+
+        stat = self.stats[cat_name][text] = TestStat(text, method='regex')
+
+        for key in match_keys:
+            stat.extend(self.stats[cat_name][key])
+            del self.stats[cat_name][key]
+
+        self.pause = False
+
     def _stat_result(self, item):
         """
         Categorizes and keep the count of a result of a test item depends on
@@ -151,13 +175,11 @@ class DiceApp(object):
         res = item.res
         fail_patts = item.fail_patts
 
-        self.counters['cnt'] += 1
         key = res.stderr
         catalog = None
         if res:
             if res.exit_status == 'timeout':
                 catalog = 'timeout'
-                self.counters['timeout'] += 1
 
             if self.watching and self.watching in res.stderr:
                 self.pause = True
@@ -182,13 +204,19 @@ class DiceApp(object):
                     catalog = 'failure'
         else:
             catalog = 'skip'
-            self.counters['skip'] += 1
 
-        self.counters[catalog] += 1
-        self.stats[catalog][key] += 1
-        if key not in self.queues[catalog]:
-            self.queues[catalog][key] = collections.deque([], self.QUEUE_MAX)
-        self.queues[catalog][key].append(res)
+        found = False
+        for stat in self.stats[catalog].values():
+            if stat.match(key):
+                found = True
+                key = stat.key
+                break
+
+        if not found:
+            self.stats[catalog][key] = TestStat(key)
+
+        stat = self.stats[catalog][key]
+        stat.append(res)
 
     def _process_providers(self):
         """
@@ -267,8 +295,8 @@ class DiceApp(object):
         panel = self.window.stat_panel
         panel.clear()
         for cat_name in self.stats:
-            for key, cnt in self.stats[cat_name].most_common(10):
-                bundle = {'key': key, 'count': cnt}
+            for key, stat in self.stats[cat_name].items():
+                bundle = {'key': key, 'count': stat.counter}
                 panel.add_item(bundle, catalog=cat_name)
 
         # Set items panel content
@@ -276,9 +304,9 @@ class DiceApp(object):
         panel.clear()
         cat_name, item_idx = self.cur_class
         if cat_name is not None and item_idx is not None:
-            item_name, cnt = self.stats[cat_name].most_common(10)[item_idx]
+            item_name, stat = self.stats[cat_name].items()[item_idx]
             try:
-                for item in self.queues[cat_name][item_name]:
+                for item in self.stats[cat_name][item_name].queue:
                     bundle = {'item': item.cmdline}
                     panel.add_item(bundle)
             except RuntimeError:
@@ -289,8 +317,8 @@ class DiceApp(object):
         panel.clear()
         cat_name, item_idx = self.cur_class
         if cat_name is not None and item_idx is not None:
-            item_name, cnt = self.stats[cat_name].most_common(10)[item_idx]
-            items = self.queues[cat_name][item_name]
+            item_name, stat = self.stats[cat_name].items()[item_idx]
+            items = self.stats[cat_name][item_name].queue
 
             item_name, item_idx = self.cur_item
             if item_name is not None and item_idx is not None:

@@ -1,5 +1,6 @@
 import collections
 import curses
+import threading
 
 
 class Panel(object):
@@ -11,11 +12,16 @@ class Panel(object):
         self.pad = Pad(self.height, self.width)
         self.resize(self.height, self.width)
         self.x, self.y = x, y
+        self.keypress_listeners = {}
 
     def resize(self, height, width):
         self.height = height
         self.width = width
         self.pad.resize(height, width)
+
+    def add_keypress_listener(self, name, key, callback):
+        if name not in self.keypress_listeners:
+            self.keypress_listeners[name] = {'key': key, 'callback': callback}
 
 
 class Catalog(object):
@@ -197,3 +203,51 @@ class ListPanel(Panel):
                 cat_name = cats[(cat_idx - 1) % len(cats)]
                 item_idx = 0
             self.select(cat_name, item_idx)
+
+        for listener in self.keypress_listeners.values():
+            if ch == ord(listener['key']):
+                callback_thread = threading.Thread(
+                    target=listener['callback'],
+                    args=(self,)
+                )
+                callback_thread.start()
+
+
+class InputPanel(Panel):
+    def __init__(self, screen, height, width, write_cb, cancel_cb, x=0, y=0):
+        super(InputPanel, self).__init__(screen, height, width, x=x, y=y)
+        self.content = ''
+        self.cur_key = (None, None)
+        self.write_cb = write_cb
+        self.cancel_cb = cancel_cb
+
+    def draw(self, active=False):
+        self.pad.reset()
+
+        lines = str(self.content).splitlines()
+        for line in lines:
+            self.pad.println(line, align='left', style=curses.A_NORMAL)
+
+        if active:
+            self.pad.box()
+        self.pad.refresh(0, 0,
+                         self.y, self.x,
+                         self.y + self.height, self.x + self.width)
+
+    def on_keypress(self, ch):
+        if ch < 0:
+            return False
+
+        # Press Ctrl-W to trigger write event
+        if ch == 23:
+            if self.write_cb:
+                self.write_cb(self.content)
+        # Press Ctrl-D to trigger cancel event
+        elif ch == 4:
+            if self.cancel_cb:
+                self.cancel_cb(self.content)
+        elif ch == curses.KEY_BACKSPACE:
+            self.content = self.content[:-1]
+        else:
+            self.content += chr(ch)
+        return True

@@ -1,4 +1,5 @@
 import curses
+import time
 
 from . import panel
 
@@ -40,6 +41,9 @@ class Window(object):
             self.height, self.width / 3,
             x=self.width / 3 * 2, y=0,
         )
+
+        self.input_panel = None
+        self.input_result = ''
 
         self.panels = []
         self.panels.append(self.stat_panel)
@@ -107,3 +111,33 @@ class Window(object):
     def update(self):
         self._dispatch_events()
         self.draw()
+
+    def get_input(self):
+        def _write_cb(text):
+            # Close input panel
+            self.active_panel = old_active_panel
+            self.input_panel = None
+            del self.panels[-1]
+            self.input_result = text
+
+        def _cancel_cb(text):
+            # Close input panel
+            self.active_panel = old_active_panel
+            self.input_panel = None
+            del self.panels[-1]
+
+        self.input_result = ''
+        self.input_panel = panel.InputPanel(
+            self.screen,
+            self.height / 2, self.width * 5 / 6,
+            _write_cb, _cancel_cb,
+            x=self.width / 12, y=self.height / 4
+        )
+        self.panels.append(self.input_panel)
+        old_active_panel = self.active_panel
+        self.active_panel = self.input_panel
+
+        while self.input_panel is not None:
+            time.sleep(0.5)
+
+        return self.input_result
