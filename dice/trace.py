@@ -1,4 +1,5 @@
 import ast
+import inspect
 import logging
 import sys
 
@@ -38,6 +39,14 @@ class Trace(object):
             lines.append(s)
         return repr(lines)
 
+    def _exec_call(self, node):
+        func_name = node.func.attr
+        pkg_name = node.func.value.id
+        mod_name = '.'.join(['virsh', 'utils', pkg_name])
+        mod = sys.modules[mod_name]
+        func = getattr(mod, func_name)
+        return func()
+
     def _proc_compare(self, node, symbols):
         assert len(node.ops) == 1
         assert len(node.comparators) == 1
@@ -52,24 +61,38 @@ class Trace(object):
         elif isinstance(comparator, ast.Num):
             comparator = comparator.n
 
+        call_result = None
+        if isinstance(comparator, ast.Call):
+            call_result = self._exec_call(comparator)
+
         if left not in symbols:
-            if comparator == 'Integer':
-                if op != 'IsNot':
-                    symbols[left] = symbol.Integer()
-                else:
-                    symbols[left] = symbol.Bytes(exc_types=['Integer'])
-            elif isinstance(comparator, int):
+            # Objective for testing left symbol type
+            test_obj = comparator
+            if call_result is not None:
+                test_obj = call_result
+
+            if op in ['In', 'NotIn']:
+                assert isinstance(test_obj, list)
+                test_obj = call_result[0]
+
+            known_symbols = []
+            for name in dir(symbol):
+                obj = getattr(symbol, name)
+                if inspect.isclass(obj) and issubclass(obj, symbol.Symbol):
+                    known_symbols.append(name)
+
+            if isinstance(test_obj, int):
                 symbols[left] = symbol.Integer()
-            elif isinstance(comparator, ast.Call):
-                func_name = comparator.func.attr
-                pkg_name = comparator.func.value.id
-                mod_name = '.'.join(['virsh', 'utils', pkg_name])
-                mod = sys.modules[mod_name]
-                func = getattr(mod, func_name)
-                res = func()
-                symbols[left] = symbol.Bytes(scope=res)
+            elif isinstance(test_obj, str) or isinstance(test_obj, unicode):
+                if test_obj in known_symbols:
+                    if op != 'IsNot':
+                        symbols[left] = getattr(symbol, test_obj)()
+                    else:
+                        symbols[left] = symbol.Bytes(exc_types=[test_obj])
+                else:
+                    symbols[left] = symbol.Bytes()
             else:
-                raise Exception('Unexpected comparator %s' % comparator)
+                raise Exception('Unexpected comparator type %s' % type(test_obj))
         sleft = symbols[left]
         sleft_type = sleft.__class__.__name__
 
@@ -99,9 +122,9 @@ class Trace(object):
             if sleft_type == 'Integer':
                 sleft.minimum = comparator
         elif op == 'In':
-            pass
+            sleft.scope = call_result
         elif op == 'NotIn':
-            pass
+            sleft.excs = call_result
         else:
             raise TraceSolveError('Unknown operator: %s' % op)
 
