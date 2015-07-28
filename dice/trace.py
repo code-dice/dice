@@ -94,7 +94,8 @@ class Trace(object):
                 else:
                     symbols[left] = symbol.Bytes()
             else:
-                raise Exception('Unexpected comparator type %s' % type(test_obj))
+                raise Exception('Unexpected comparator type %s' %
+                                type(test_obj))
         sleft = symbols[left]
         sleft_type = sleft.__class__.__name__
 
