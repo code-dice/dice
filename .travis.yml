@@ -7,9 +7,11 @@ matrix:
           env: TOX_ENV=py33
         - python: 3.4
           env: TOX_ENV=py34
-install: 
-    - "pip install -r requirements.txt"
-script: 
+install:
+    - "pip install tox coveralls"
+script:
     - "tox -e $TOX_ENV"
+    - "tox -e pep8"
+    - "tox -e pylint"
 after_success:
     coveralls

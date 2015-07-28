@@ -1,8 +1,4 @@
-coveralls
-coverage
 future
-pep8
-pylint
 PyYAML
 requests
 tox
