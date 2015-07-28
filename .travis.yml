@@ -13,5 +13,6 @@ script:
     - "tox -e $TOX_ENV"
     - "tox -e pep8"
     - "tox -e pylint"
+    - "tox -e docs"
 after_success:
     coveralls
