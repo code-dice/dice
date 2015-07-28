@@ -24,28 +24,57 @@ class Constraint(object):
         self.traces = self._tree2traces(tree)
 
     def _tree2traces(self, tree):
+        def _revert_compare(node):
+            """
+            Helper function to revert a compare node to its negation.
+            """
+            rev_node = copy.deepcopy(node)
+            op = rev_node.ops[0]
+
+            if isinstance(op, ast.Is):
+                rev_node.ops = [ast.IsNot()]
+            elif isinstance(op, ast.Gt):
+                rev_node.ops = [ast.LtE()]
+            elif isinstance(op, ast.Lt):
+                rev_node.ops = [ast.GtE()]
+            elif isinstance(op, ast.Eq):
+                rev_node.ops = [ast.NotEq()]
+            elif isinstance(op, ast.In):
+                rev_node.ops = [ast.NotIn()]
+            else:
+                raise ConstraintError('Unknown operator: %s' % op)
+            return rev_node
+
+        def _revert_test(node):
+            """
+            Helper function to revert a test node to its negation.
+            """
+            rev_node = copy.deepcopy(node)
+            # Allow syntax like 'any(a is b)' or 'all(c in d)'
+            if isinstance(rev_node, ast.Call):
+                func_name = rev_node.func.id
+                assert len(rev_node.args) == 1
+                assert isinstance(rev_node.args[0], ast.Compare)
+
+                rev_node.args[0] = _revert_compare(rev_node.args[0])
+                if func_name == 'any':
+                    rev_node.func.id = 'all'
+                elif func_name == 'all':
+                    rev_node.func.id = 'any'
+            elif isinstance(rev_node, ast.Compare):
+                rev_node = _revert_compare(node)
+            else:
+                raise ConstraintError('Unknown test node: %s' % node)
+            return rev_node
+
         def _parse_if(node):
             cur_trace.append(node.test)
             _parse_block(node.body)
             cur_trace.pop()
 
-            rev_test = copy.deepcopy(node.test)
-            op = rev_test.ops[0]
+            rev_node = _revert_test(node.test)
 
-            if isinstance(op, ast.Is):
-                rev_test.ops = [ast.IsNot()]
-            elif isinstance(op, ast.Gt):
-                rev_test.ops = [ast.LtE()]
-            elif isinstance(op, ast.Lt):
-                rev_test.ops = [ast.GtE()]
-            elif isinstance(op, ast.Eq):
-                rev_test.ops = [ast.NotEq()]
-            elif isinstance(op, ast.In):
-                rev_test.ops = [ast.NotIn()]
-            else:
-                raise ConstraintError('Unknown operator: %s' % op)
-
-            cur_trace.append(rev_test)
+            cur_trace.append(rev_node)
             _parse_block(node.orelse)
             cur_trace.pop()
 
