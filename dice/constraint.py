@@ -26,7 +26,7 @@ class Constraint(object):
     def _tree2traces(self, tree):
         def _parse_if(node):
             cur_trace.append(node.test)
-            _parse_list(node.body)
+            _parse_block(node.body)
             cur_trace.pop()
 
             rev_test = copy.deepcopy(node.test)
@@ -46,10 +46,10 @@ class Constraint(object):
                 raise ConstraintError('Unknown operator: %s' % op)
 
             cur_trace.append(rev_test)
-            _parse_list(node.orelse)
+            _parse_block(node.orelse)
             cur_trace.pop()
 
-        def _parse_list(nodes):
+        def _parse_block(nodes):
             for node in nodes:
                 if isinstance(node, ast.If):
                     _parse_if(node)
@@ -72,7 +72,7 @@ class Constraint(object):
                 if isinstance(v, ast.If):
                     _parse_if(v)
                 elif isinstance(v, ast.Module):
-                    _parse_list(v.body)
+                    _parse_block(v.body)
                 else:
                     raise ConstraintError('Unknown node: %s' % v)
         return traces
