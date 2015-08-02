@@ -1,4 +1,5 @@
 import ast
+import builtins
 import inspect
 import logging
 import sys
@@ -20,6 +21,7 @@ class TraceSolveError(TraceError):
 class Trace(object):
     def __init__(self, trace):
         self.item = None
+        self.symbols = {}
         self.trace = trace[:]
         ret = trace[-1]
         assert isinstance(ret, ast.Return)
@@ -46,9 +48,16 @@ class Trace(object):
         mod_name = '.'.join(['virsh', 'utils', pkg_name])
         mod = sys.modules[mod_name]
         func = getattr(mod, func_name)
-        return func()
+        args = []
+        for arg in node.args:
+            if isinstance(arg, ast.Name):
+                name = arg.id
+                args.append(self.item.get(name))
+            else:
+                raise TraceError('Unknown argument type: %s' % arg)
+        return func(*args)
 
-    def _proc_compare(self, node, symbols):
+    def _proc_compare(self, node):
         assert len(node.ops) == 1
         assert len(node.comparators) == 1
         assert isinstance(node.left, ast.Name)
@@ -57,97 +66,139 @@ class Trace(object):
         op = node.ops[0].__class__.__name__
         comparator = node.comparators[0]
 
+        known_symbols = []
+        for name in dir(symbol):
+            obj = getattr(symbol, name)
+            if inspect.isclass(obj) and issubclass(obj, symbol.Symbol):
+                known_symbols.append(name)
+
+        exc_types = []
+        right_value = None
         if isinstance(comparator, ast.Name):
-            comparator = comparator.id
-        elif isinstance(comparator, ast.Num):
-            comparator = comparator.n
-        elif isinstance(comparator, ast.Str):
-            comparator = comparator.s
-
-        call_result = None
-        if isinstance(comparator, ast.Call):
-            call_result = self._exec_call(comparator)
-
-        if left not in symbols:
-            # Objective for testing left symbol type
-            test_obj = comparator
-            if call_result is not None:
-                test_obj = call_result
-
-            if op in ['In', 'NotIn']:
-                assert isinstance(test_obj, list)
-                test_obj = call_result[0]
-
-            known_symbols = []
-            for name in dir(symbol):
-                obj = getattr(symbol, name)
-                if inspect.isclass(obj) and issubclass(obj, symbol.Symbol):
-                    known_symbols.append(name)
-
-            if isinstance(test_obj, int):
-                symbols[left] = symbol.Integer()
-            elif isinstance(test_obj, str):
-                if test_obj in known_symbols:
-                    if op != 'IsNot':
-                        symbols[left] = getattr(symbol, test_obj)()
-                    else:
-                        symbols[left] = symbol.Bytes(exc_types=[test_obj])
-                else:
-                    symbols[left] = symbol.Bytes()
+            if comparator.id not in known_symbols:
+                raise TraceError("Unknown symbol '%s'" % comparator.id)
+            if op == 'IsNot':
+                sym_type = 'Bytes'
+                exc_types.append(comparator.id)
             else:
-                raise Exception('Unexpected comparator type %s' %
-                                type(test_obj))
-        sleft = symbols[left]
-        sleft_type = sleft.__class__.__name__
+                sym_type = comparator.id
+        elif isinstance(comparator, ast.Num):
+            sym_type = 'Integer'
+            right_value = comparator.n
+        elif isinstance(comparator, ast.Str):
+            sym_type = 'Bytes'
+            right_value = comparator.s
+
+        if isinstance(comparator, ast.Call):
+            call_ret = self._exec_call(comparator)
+
+            test_val = call_ret
+            if isinstance(call_ret, (list, tuple)):
+                test_val = call_ret[0]
+
+            if isinstance(test_val, builtins.str):
+                sym_type = 'Bytes'
+            elif isinstance(test_val, int):
+                sym_type = 'Integer'
+
+        if left not in self.symbols:
+            self.symbols[left] = getattr(
+                symbol, sym_type)(exc_types=[exc_types])
+        else:
+            sleft = self.symbols[left]
+            sleft_type = sleft.__class__.__name__
+
+            if op != 'IsNot':
+                if not issubclass(sleft.__class__, getattr(symbol, sym_type)):
+                    raise TraceError(
+                        'Unmatched type %s(operator: %s). Should be %s' %
+                        (sym_type, op, sleft_type))
 
         if op == 'Is':
-            if sleft_type != comparator:
-                raise Exception(
-                    'Unmatched type %s. Should be %s' %
-                    (comparator, sleft_type))
+            pass
         elif op == 'IsNot':
-            if sleft_type == comparator:
-                raise Exception(
-                    'Unmatched type. Should not be %s' % sleft_type)
+            pass
         elif op == 'Eq':
-            if sleft.scope and comparator not in sleft.scope:
+            if sleft.scope and right_value not in sleft.scope:
                 raise Exception(
                     'Unsatisfiable condition. Need equal to "%s", '
-                    'but scope is %s' % (comparator, sleft.scope)
+                    'but scope is %s' % (right_value, sleft.scope)
                 )
-            sleft.scope = [comparator]
+            sleft.scope = [right_value]
         elif op == 'NotEq':
             if sleft.excs is None:
                 sleft.excs = []
-            sleft.excs.append(comparator)
+            sleft.excs.append(right_value)
         elif op == 'Lt':
             if sleft_type == 'Integer':
-                sleft.maximum = comparator - 1
+                sleft.maximum = right_value - 1
         elif op == 'LtE':
             if sleft_type == 'Integer':
-                sleft.maximum = comparator
+                sleft.maximum = right_value
         elif op == 'Gt':
             if sleft_type == 'Integer':
-                sleft.minimum = comparator + 1
+                sleft.minimum = right_value + 1
         elif op == 'GtE':
             if sleft_type == 'Integer':
-                sleft.minimum = comparator
+                sleft.minimum = right_value
         elif op == 'In':
-            sleft.scope = call_result
+            sleft.scope = call_ret
         elif op == 'NotIn':
-            sleft.excs = call_result
+            sleft.excs = call_ret
         else:
             raise TraceSolveError('Unknown operator: %s' % op)
 
+    def _proc_call(self, node):
+        func_name = node.func.id
+        assert func_name in ['any', 'all']
+        assert isinstance(node.args[0], ast.Compare)
+        comp = node.args[0]
+        op = comp.ops[0].__class__.__name__
+        left = comp.left
+        right = comp.comparators[0]
+        if isinstance(left, ast.Name):
+            sym_left = self.symbols[left.id]
+            assert isinstance(right, ast.Call)
+            right = self._exec_call(right)
+            assert isinstance(right, (list, tuple))
+            assert op in ['In', 'NotIn']
+            if func_name == 'all':
+                if op == 'In':
+                    sym_left.scopes.append((right, True, 0))
+                elif op == 'NotIn':
+                    sym_left.scopes.append((right, False, 1))
+            elif func_name == 'any':
+                if op == 'In':
+                    sym_left.scopes.append((right, True, 1))
+                    sym_left.scopes.append((right, False, 0))
+                elif op == 'NotIn':
+                    sym_left.scopes.append((right, True, 0))
+                    sym_left.scopes.append((right, False, 1))
+        elif isinstance(left, ast.Call):
+            sym_right = self.symbols[right.id]
+            left = self._exec_call(left)
+            if func_name == 'all':
+                if op == 'In':
+                    raise Exception('TODO')
+                elif op == 'NotIn':
+                    sym_right.excludes = left
+            elif func_name == 'any':
+                if op == 'In':
+                    pass  # TODO
+        else:
+            raise TraceError('Unknown left type %s' % left)
+
     def solve(self, item):
         self.item = item
-        symbols = {}
+        self.symbols = {}
 
         for node in self.trace:
             if isinstance(node, ast.Compare):
-                self._proc_compare(node, symbols)
+                self._proc_compare(node)
+            elif isinstance(node, ast.Call):
+                self._proc_call(node)
             elif isinstance(node, ast.Return):
-                res_self = symbols['self'].model()
+                res_self = self.symbols['self'].model()
                 return res_self
             else:
-                logger.error('Unknown node type: %s', type(node))
+                raise TraceError('Unknown node type: %s' % type(node))

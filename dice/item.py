@@ -15,7 +15,7 @@ class ItemBase(object):
         setattr(self, target, value)
 
     def get(self, target):
-        return getattr(self, target)
+        return getattr(self, target, None)
 
     def serialize(self):
         return ''

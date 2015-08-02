@@ -35,16 +35,41 @@ class Bytes(Symbol):
         return ''.join(bt for bt in os.urandom(cnt) if bt != b'\x00')
 
 
-class NonEmptyBytes(Symbol):
+class NonEmptyBytes(Bytes):
     def generate(self):
         cnt = int(random.expovariate(0.1)) + 1
         return ''.join(bt for bt in os.urandom(cnt) if bt != b'\x00')
 
 
-class String(Symbol):
+class String(Bytes):
     def generate(self):
         cnt = int(random.expovariate(0.1))
         return ''.join(random.choice(string.printable) for _ in range(cnt))
+
+
+class StringList(Symbol):
+    def __init__(self, scope=None, excs=None, exc_types=None):
+        super(StringList, self).__init__()
+        self.scopes = []
+
+    def generate(self):
+        cnt = int(random.expovariate(0.1))
+        return ''.join(random.choice(string.printable) for _ in range(cnt))
+
+    def model(self):
+        cnt = int(random.expovariate(0.1))
+        res = set()
+        for _ in range(cnt):
+            entry = None
+            if self.scopes:
+                for scope, _, _ in self.scopes:
+                    if scope:
+                        entry = random.choice(scope)
+            else:
+                entry = self.generate()
+            if entry:
+                res.add(entry)
+        return list(res)
 
 
 class Integer(Symbol):
