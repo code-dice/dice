@@ -11,6 +11,26 @@ class ConstraintError(Exception):
     pass
 
 
+class ConstraintManager(object):
+    def __init__(self, path):
+        self.constraints = load(path)
+        self.item = None
+        self.status = {}
+
+    def constrain(self, item):
+        self.item = item
+        self.status = {c.name: 'untouched'
+                       for c in self.constraints}
+        while any(s == 'untouched' for s in self.status.values()):
+            for constraint in self.constraints:
+                if constraint.assumption_valid(self):
+                    result = constraint.apply(item)
+                else:
+                    result = 'skipped'
+
+                self.status[constraint.name] = result
+
+
 class Constraint(object):
 
     def __init__(self, name,
@@ -22,6 +42,36 @@ class Constraint(object):
         self.tree = tree
         self.fail_ratio = 0.1
         self.traces = self._tree2traces(tree)
+
+    def assumption_valid(self, mgr):
+        if self.assume is None:
+            return True
+
+        module = ast.parse(self.assume)
+        assert len(module.body) == 1
+        expr = module.body[0]
+        assert isinstance(expr, ast.Expr)
+
+        compare = expr.value
+        assert isinstance(compare, ast.Compare)
+
+        assert len(compare.ops) == 1
+        left = compare.left
+        if isinstance(left, ast.Name):
+            left = left.id
+        op = compare.ops[0].__class__.__name__
+        right = compare.comparators[0]
+
+        if isinstance(right, ast.Name):
+            right = right.id
+
+        if left in mgr.status:
+            left = mgr.status[left]
+
+        if op == 'Is':
+            return left.lower() == right.lower()
+        else:
+            raise ConstraintError('Operator %s is not handled' % op)
 
     def _tree2traces(self, tree):
         def _revert_compare(node):
@@ -111,9 +161,9 @@ class Constraint(object):
         passes = []
 
         for t in self.traces:
-            if t.result == 'PASS':
+            if t.result == 'pass':
                 passes.append(t)
-            elif t.result == 'FAIL':
+            elif t.result == 'fail':
                 fails.append(t)
 
         if fail_ratio is None:
@@ -125,7 +175,7 @@ class Constraint(object):
 
     def apply(self, item):
         t = self._choose()
-        sol = t.solve()
+        sol = t.solve(item)
         patts = t.result_patts
         if patts is not None:
             if isinstance(patts, list):
@@ -133,6 +183,7 @@ class Constraint(object):
             else:
                 item.fail_patts.add(patts)
         item.set(self.target, sol)
+        return t.result
 
     @classmethod
     def from_dict(cls, data):

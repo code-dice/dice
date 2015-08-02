@@ -19,10 +19,11 @@ class TraceSolveError(TraceError):
 
 class Trace(object):
     def __init__(self, trace):
+        self.item = None
         self.trace = trace[:]
         ret = trace[-1]
         assert isinstance(ret, ast.Return)
-        self.result = ret.value.func.id
+        self.result = ret.value.func.id.lower()
         args = ret.value.args
 
         self.result_patts = None
@@ -138,7 +139,8 @@ class Trace(object):
         else:
             raise TraceSolveError('Unknown operator: %s' % op)
 
-    def solve(self):
+    def solve(self, item):
+        self.item = item
         symbols = {}
 
         for node in self.trace:

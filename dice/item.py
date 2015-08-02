@@ -8,10 +8,6 @@ class ItemBase(object):
         self.tree = Tree
         self.fail_patts = set()
 
-    def constrain(self, constraints):
-        for cstr in constraints:
-            cstr.apply(self)
-
     def run(self):
         pass
 

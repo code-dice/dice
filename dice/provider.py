@@ -65,10 +65,11 @@ class Provider(object):
                                  (mod_name, cls_name))
 
         self.Item = self.modules['%s.item' % self.name].Item
-        self.constraints = constraint.load(os.path.join(path, 'die'))
+        self.constraint_manager = constraint.ConstraintManager(
+            os.path.join(path, 'die'))
 
     def run_once(self):
         item = self.Item()
-        item.constrain(self.constraints)
+        self.constraint_manager.constrain(item)
         item.run()
         return item
