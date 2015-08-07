@@ -8,19 +8,33 @@ DICE
     :target: https://readthedocs.org/projects/dice/?badge=latest
     :alt: Documentation Status
 
-DICE is a random testing framework.
+DICE is a black-box random testing framework.
+
+Goals and Objectives
+====================
+
+- Provides professional random testing.
+- Apply to your project with minimal effort.
+- Human friendly configuration process.
 
 Quick Start
 ===========
 
 
-Contact
-=======
+Documentation
+=============
 
-Any suggestion and hacking are welcome.
+All documentation is online at https://dice.readthedocs.org/en/latest/.
 
-All bug reporting, issues and patches should be sent on:
-[Github page](https://github.com/Hao-Liu/dice)
+Contribute
+==========
 
-Further details and updates of the project in on the project website:
-[Project website](https://github.com/Hao-Liu/dice)
+Bug reporting, issues and patches to both code and documentation are welcome on
+Github_.
+`Contribution Guideline`: TODO
+
+Reference
+=========
+
+.. _Github: https://github.com/Hao-Liu/dice
+.. _Documentation: https://dice.readthedocs.org/en/latest/
