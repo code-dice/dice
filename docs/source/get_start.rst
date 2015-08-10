@@ -37,7 +37,23 @@ Build the example binary from source::
 
 Run DICE on the example project::
 
-    dice --providers .
+    dice
+
+This will open a TUI shows the statistics of results by generating the option
+randomly.
+
+.. image:: dice-screenshot.png
+
+The left panel is a **stat panel** shows the stat of error message patterns
+categorized by the exit status and whether error message matches expectation
+defined in the constraint file.
+
+The central panel is a **list panel** lists recent called command lines matches
+the error message pattern selecting in the **stat panel**.
+
+The right panel is a **detail panel** show the detailed information of the
+selected command in **list panel** includes command line, standard output and
+standard error.
 
 Create a new Project
 ^^^^^^^^^^^^^^^^^^^^
