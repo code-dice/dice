@@ -11,30 +11,31 @@ DICE
 DICE is a black-box random testing framework.
 
 Goals and Objectives
-====================
+--------------------
 
 - Provides professional random testing.
 - Apply to your project with minimal effort.
 - Human friendly configuration process.
 
 Quick Start
-===========
+-----------
 
 
 Documentation
-=============
+-------------
 
 All documentation is online at https://dice.readthedocs.org/en/latest/.
 
 Contribute
-==========
+----------
 
 Bug reporting, issues and patches to both code and documentation are welcome on
 Github_.
-`Contribution Guideline`: TODO
+
+`Contribution Guideline`: http://dice.readthedocs.org/en/latest/contribute.html
 
 Reference
-=========
+---------
 
 .. _Github: https://github.com/Hao-Liu/dice
 .. _Documentation: https://dice.readthedocs.org/en/latest/
