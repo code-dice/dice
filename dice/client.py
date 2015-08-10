@@ -64,42 +64,43 @@ class DiceApp(object):
     def __init__(self):
         self.parser = argparse.ArgumentParser()
         self.parser.add_argument(
+            'providers',
+            nargs='?',
+            action='store',
+            help="list of test providers separated by ','. Default to current "
+            "working directory",
+            default=os.getcwd(),
+        )
+        self.parser.add_argument(
             '--server',
             action='store',
-            help='Server address',
+            help='server address',
             dest='server',
             default=None,
         )
         self.parser.add_argument(
             '--port',
             action='store',
-            help='Server port',
+            help='server port',
             dest='port',
             default='8067',
         )
         self.parser.add_argument(
             '--username',
             action='store',
-            help='Server authentication user name',
+            help='server authentication user name',
             dest='username',
         )
         self.parser.add_argument(
             '--password',
             action='store',
-            help='Server authentication password',
+            help='server authentication password',
             dest='password',
-        )
-        self.parser.add_argument(
-            '--providers',
-            action='store',
-            help="List of test providers separated by ','",
-            dest='providers',
-            default='',
         )
         self.parser.add_argument(
             '--no-ui',
             action='store_false',
-            help="Don't show terminal interactive user interface.",
+            help="don't show terminal interactive user interface.",
             dest='ui',
             default=True,
         )
