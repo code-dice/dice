@@ -1,5 +1,7 @@
+====
 DICE
-======================
+====
+
 .. image:: https://travis-ci.org/Hao-Liu/dice.svg?branch=master
     :target: https://travis-ci.org/Hao-Liu/dice
 .. image:: https://coveralls.io/repos/Hao-Liu/dice/badge.svg?branch=master&service=github
@@ -11,23 +13,26 @@ DICE
 DICE is a black-box random testing framework.
 
 Goals and Objectives
---------------------
+====================
 
 - Provides professional random testing.
 - Apply to your project with minimal effort.
 - Human friendly configuration process.
 
-Quick Start
------------
+Getting Started
+======================
 
+Please check `Getting Started
+<http://dice.readthedocs.org/en/latest/contribute.html>` section in the
+document.
 
 Documentation
--------------
+=============
 
 All documentation is online at https://dice.readthedocs.org/en/latest/.
 
 Contribute
-----------
+==========
 
 Bug reporting, issues and patches to both code and documentation are welcome on
 Github_.
@@ -35,7 +40,7 @@ Github_.
 `Contribution Guideline`: http://dice.readthedocs.org/en/latest/contribute.html
 
 Reference
----------
+=========
 
 .. _Github: https://github.com/Hao-Liu/dice
 .. _Documentation: https://dice.readthedocs.org/en/latest/

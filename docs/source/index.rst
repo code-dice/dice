@@ -6,8 +6,10 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   about
    get_start
    write_test
+   how_it_works
    contribute
 
 API References
