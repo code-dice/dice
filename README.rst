@@ -57,7 +57,7 @@ Run DICE on the example project::
 This will open a ncurses TUI shows the statistics of results by generating the
 option randomly.
 
-.. image:: dice-screenshot.png
+.. image:: docs/source/dice-screenshot.png
 
 The left panel is a **stat panel** shows the stat of error message patterns
 categorized by the exit status and whether error message matches expectation
