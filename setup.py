@@ -33,7 +33,7 @@ def get_packages():
 setup(
     name='dice',
     version=dice.__version__,
-    url='http://github.com/Hao-Liu/dice/',
+    url='http://github.com/code-dice/dice/',
     license='GNU General Public License v2',
     author='Hao Liu',
     author_email='hliu@redhat.com',

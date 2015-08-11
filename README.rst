@@ -2,10 +2,10 @@
 DICE
 ====
 
-.. image:: https://travis-ci.org/Hao-Liu/dice.svg?branch=master
-    :target: https://travis-ci.org/Hao-Liu/dice
-.. image:: https://coveralls.io/repos/Hao-Liu/dice/badge.svg?branch=master&service=github
-    :target: https://coveralls.io/github/Hao-Liu/dice?branch=master
+.. image:: https://travis-ci.org/code-dice/dice.svg?branch=master
+    :target: https://travis-ci.org/code-dice/dice
+.. image:: https://coveralls.io/repos/code-dice/dice/badge.svg?branch=master&service=github
+    :target: https://coveralls.io/github/code-dice/dice?branch=master
 .. image:: https://readthedocs.org/projects/dice/badge/?version=latest
     :target: https://readthedocs.org/projects/dice/?badge=latest
     :alt: Documentation Status
@@ -30,7 +30,7 @@ Install from Git Source
 
 To install DICE from git repository, clone the source code to local first::
 
-    git clone https://github.com/Hao-Liu/dice
+    git clone https://github.com/code-dice/dice
     cd dice
 
 Then install dependencies from pip::
@@ -108,6 +108,6 @@ Github_.
 Reference
 =========
 
-.. _Github: https://github.com/Hao-Liu/dice
+.. _Github: https://github.com/code-dice/dice
 .. _`Getting Started`: http://dice.readthedocs.org/en/latest/get_start.html
 .. _Documentation: https://dice.readthedocs.org/en/latest/

@@ -13,7 +13,7 @@ Install from Git Source
 
 To install DICE from git repository, clone the source code to local first::
 
-    git clone https://github.com/Hao-Liu/dice
+    git clone https://github.com/code-dice/dice
     cd dice
 
 Then install dependencies from pip::
