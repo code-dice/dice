@@ -78,7 +78,17 @@ The follow key press allowing navigation through the panels.
 | ^D  | Cancel current input         |
 +-----+------------------------------+
 
-Create a custom Project (Implementing)
---------------------------------------
+Creating a custom Project (Implementing)
+----------------------------------------
 
+1. Generate a skeleton file structure by fill the required information promptly::
 
+    dice --start-project
+
+2. Change ``item.py`` to call custom command or API.
+
+3. Add constraints depicts expected result.
+
+4. Run dice and check result. If something need fix, goto step 2.
+
+5. Run dice continuously until bug found.
