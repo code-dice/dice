@@ -1,8 +1,9 @@
+==================
 Writing DICE Tests
 ==================
 
 Anatomy of a DICE Project
--------------------------
+=========================
 
 The file structure of a basic DICE project likes::
 
@@ -23,7 +24,7 @@ The file structure of a basic DICE project likes::
 
 
 Writing Test Runner
--------------------
+===================
 
 ``item.py`` contains a class ``Item`` inherits from ``dice.item`` class from DICE`s
 core API:
@@ -32,7 +33,7 @@ core API:
 
 
 Writing Constraint
-------------------
+==================
 
 An example constraint YAML_ file likes:
 
