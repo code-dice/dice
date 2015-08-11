@@ -22,9 +22,7 @@ Goals and Objectives
 Getting Started
 ======================
 
-Please check `Getting Started
-<http://dice.readthedocs.org/en/latest/contribute.html>` section in the
-document.
+Please check `Getting Started`_ section in the document.
 
 Documentation
 =============
@@ -43,4 +41,5 @@ Reference
 =========
 
 .. _Github: https://github.com/Hao-Liu/dice
+.. _`Getting Started`: http://dice.readthedocs.org/en/latest/get_start.html
 .. _Documentation: https://dice.readthedocs.org/en/latest/
