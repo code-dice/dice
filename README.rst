@@ -15,9 +15,11 @@ DICE is a black-box random testing framework.
 Goals and Objectives
 ====================
 
+- Standardize software random testing activity.
 - Provides professional random testing.
 - Apply to your project with minimal effort.
 - Human friendly configuration process.
+- Universally applicable to many aspect of software testing.
 
 Getting Started
 ======================
@@ -54,7 +56,7 @@ Run DICE on the example project::
 
     dice
 
-This will open a ncurses TUI shows the statistics of results by generating the
+This will open a curses TUI shows the statistics of results by generating the
 option randomly.
 
 .. image:: docs/source/dice-screenshot.png
