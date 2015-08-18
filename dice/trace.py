@@ -4,7 +4,7 @@ import inspect
 import logging
 import sys
 
-from dice import symbol
+from . import symbol
 
 
 logger = logging.getLogger(__name__)
