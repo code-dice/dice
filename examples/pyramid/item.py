@@ -1,9 +1,9 @@
-from dice import item
-from dice.utils import base
+from dice.core import item
+from dice import utils
 
 
 class Item(item.ItemBase):
     def run(self):
         cmdline = './pyramid'
-        cmdline += ' %s' % base.escape(str(self.get('option')))
-        self.res = base.run(cmdline)
+        cmdline += ' %s' % utils.escape(str(self.get('option')))
+        self.res = utils.run(cmdline)

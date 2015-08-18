@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import io
 import os
 
 from setuptools import setup
@@ -25,6 +24,8 @@ def get_data_files():
 def get_packages():
     packages = [
         'dice',
+        'dice/core',
+        'dice/client',
         'dice/utils',
     ]
     return packages

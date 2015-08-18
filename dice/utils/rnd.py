@@ -2,8 +2,6 @@ import logging
 import random
 import string
 
-from . import base
-
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +75,7 @@ def integer(min_inc=0, max_inc=10):
     return random.randint(min_inc, max_inc)
 
 
-def text(escape=False, min_len=5, max_len=10, charset=None, excludes=None):
+def text(min_len=5, max_len=10, charset=None, excludes=None):
     """
     Generate a randomized string.
     """
@@ -97,10 +95,7 @@ def text(escape=False, min_len=5, max_len=10, charset=None, excludes=None):
 
     result_str = ''.join(random.choice(chars) for _ in range(length))
 
-    if escape:
-        return base.escape(result_str)
-    else:
-        return result_str
+    return result_str
 
 ALL_CHARS = set(string.ascii_letters) - set('&\'"<>')
 # ALL_CHARS = set(string.printable)
