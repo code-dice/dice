@@ -10,10 +10,18 @@ from . import constraint
 logger = logging.getLogger('dice')
 
 
+class ProviderError(Exception):
+    pass
+
+
 class Provider(object):
     def __init__(self, path):
         if not os.path.isdir(path):
-            raise ValueError("%s is not a directory." % path)
+            raise ProviderError("%s is not a directory." % path)
+
+        if 'item.py' not in os.listdir(path):
+            raise ProviderError("'item.py' not found in '%s'. You should "
+                                "specify a valid provider path." % path)
 
         self.name = os.path.basename(os.path.normpath(path))
         self.path = path
@@ -59,15 +67,15 @@ class Provider(object):
 
         for mod_name, cls_name in mod_cls_map.items():
             if mod_name not in self.modules:
-                raise ValueError("Module %s doesn't exists in %s" %
-                                 (mod_name, path))
+                raise ProviderError("Module %s doesn't exists in %s" %
+                                    (mod_name, path))
 
             mod = self.modules[mod_name]
 
             if (not hasattr(mod, cls_name) or
                     not inspect.isclass(getattr(mod, cls_name))):
-                raise ValueError("Module %s doesn't has class %s" %
-                                 (mod_name, cls_name))
+                raise ProviderError("Module %s doesn't has class %s" %
+                                    (mod_name, cls_name))
 
         self.Item = self.modules['%s.item' % self.name].Item
         self.constraint_manager = constraint.ConstraintManager(

@@ -107,7 +107,10 @@ class DiceApp(object):
 
         self.args, _ = self.parser.parse_known_args()
 
-        self.providers = self._process_providers()
+        try:
+            self.providers = self._process_providers()
+        except provider.ProviderError as detail:
+            exit(detail)
 
         self.stats = {
             "skip": {},
