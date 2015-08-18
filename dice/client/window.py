@@ -5,7 +5,13 @@ from . import panel
 
 
 class Window(object):
+    """
+    Class for a whole curses window of DICE client.
+    """
     def __init__(self, app):
+        """
+        :param app: The DICE application this window belongs to.
+        """
         self.app = app
         self.screen = curses.initscr()
 
@@ -52,6 +58,9 @@ class Window(object):
         self.active_panel = self.stat_panel
 
     def destroy(self):
+        """
+        Destroy the curses window.
+        """
         curses.nocbreak()
         self.screen.keypad(0)
         curses.curs_set(1)
@@ -59,6 +68,9 @@ class Window(object):
         curses.endwin()
 
     def draw(self):
+        """
+        Draw all the panels in the curses window.
+        """
         for p in self.panels:
             active = False
             if p is self.active_panel:
@@ -109,10 +121,18 @@ class Window(object):
         self.height, self.width = height, width
 
     def update(self):
+        """
+        Get events and update the window.
+        """
         self._dispatch_events()
         self.draw()
 
     def get_input(self):
+        """
+        Show and focus to an input panel and return the content.
+
+        :return: A string of input content.
+        """
         def _write_cb(text):
             # Close input panel
             self.active_panel = old_active_panel
