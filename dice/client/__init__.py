@@ -16,8 +16,9 @@ import threading
 import time
 
 from dice.core import provider
-from . import window
 from dice.utils import rnd
+
+from . import window
 
 logger = logging.getLogger('dice')
 
