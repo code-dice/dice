@@ -23,7 +23,11 @@ from . import window
 logger = logging.getLogger('dice')
 
 
-class TestThread(threading.Thread):
+class _TestThread(threading.Thread):
+    """
+    Thread class for running the main tests.
+    """
+
     def __init__(self, exc_queue, app, **kwargs):
         threading.Thread.__init__(self, **kwargs)
         self.exc_queue = exc_queue
@@ -37,7 +41,10 @@ class TestThread(threading.Thread):
             self.exc_queue.put(sys.exc_info())
 
 
-class TestStat(object):
+class _TestStat(object):
+    """
+    Class to store the tests and statistics information.
+    """
 
     def __init__(self, key, queue_max=100, method='exact'):
         self.key = key
@@ -62,6 +69,9 @@ class TestStat(object):
 
 
 class DiceApp(object):
+    """
+    Curses-based DICE client application.
+    """
     def __init__(self):
         self.parser = argparse.ArgumentParser()
         self.parser.add_argument(
@@ -131,7 +141,7 @@ class DiceApp(object):
         self.scroll_x = 0
         self.scroll_y = 0
         self.test_excs = queue.Queue()
-        self.test_thread = TestThread(self.test_excs, self)
+        self.test_thread = _TestThread(self.test_excs, self)
         self.send_queue = []
         self.last_send_thread = None
         self.last_item = None
@@ -164,7 +174,7 @@ class DiceApp(object):
             if res is not None:
                 match_keys.append(key)
 
-        stat = self.stats[cat_name][text] = TestStat(text, method='regex')
+        stat = self.stats[cat_name][text] = _TestStat(text, method='regex')
 
         for key in match_keys:
             stat.extend(self.stats[cat_name][key])
@@ -218,7 +228,7 @@ class DiceApp(object):
                 break
 
         if not found:
-            self.stats[catalog][key] = TestStat(key)
+            self.stats[catalog][key] = _TestStat(key)
 
         stat = self.stats[catalog][key]
         stat.append(res)
@@ -237,7 +247,7 @@ class DiceApp(object):
             sys.exit('Error: --providers option not specified')
         return providers
 
-    def send(self, item_queue):
+    def _send(self, item_queue):
         """
         Serialize a list of test results and send them to remote server.
         """
@@ -271,7 +281,7 @@ class DiceApp(object):
 
     def run_tests(self):
         """
-        Main loop to run tests
+        Iteratively run tests.
         """
         while not self.exiting:
             item = random.choice(self.providers.values()).run_once()
@@ -283,7 +293,7 @@ class DiceApp(object):
                     if self.last_send_thread:
                         self.last_send_thread.join()
                     send_thread = threading.Thread(
-                        target=self.send,
+                        target=self._send,
                         args=(self.send_queue,)
                     )
                     send_thread.start()
@@ -296,6 +306,9 @@ class DiceApp(object):
                     time.sleep(0.5)
 
     def update_window(self):
+        """
+        Update the content of curses window and refresh it.
+        """
         # Set statistics panel content
         panel = self.window.stat_panel
         panel.clear()
@@ -334,7 +347,7 @@ class DiceApp(object):
 
     def run(self):
         """
-        Main loop to update screen and send tests results.
+        Main loop to run tests, update screen and send tests results.
         """
         shandler = logging.StreamHandler(self.stream)
         logger.setLevel(logging.WARNING)
