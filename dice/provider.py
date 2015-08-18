@@ -19,7 +19,12 @@ class Provider(object):
         self.path = path
 
         self.modules = {}
-        for subdir in ['', 'utils']:
+
+        mod_dirs = ['']
+        if os.path.isdir(os.path.join(path, 'utils')):
+            mod_dirs.append('utils')
+
+        for subdir in mod_dirs:
             root = os.path.join(path, subdir)
             files = [f for f in os.listdir(root)
                      if os.path.isfile(os.path.join(root, f))]
