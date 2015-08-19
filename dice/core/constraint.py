@@ -8,46 +8,50 @@ from . import trace
 
 
 class ConstraintError(Exception):
+    """
+    Constraint module specified exception.
+    """
     pass
 
 
 class ConstraintManager(object):
+    """
+    Manager class contains and manipulates all constraints.
+    """
     def __init__(self, path):
-        self.constraints = load(path)
+        """
+        :param path: Directory to load constraint YAML file from.
+        """
+        self.constraints = self._load_constraints(path)
         self.item = None
         self.status = {}
 
-    def constrain(self, item):
-        self.item = item
-        self.status = {c.name: 'untouched'
-                       for c in self.constraints}
-        while any(s == 'untouched' for s in self.status.values()):
-            for constraint in self.constraints:
-                if constraint.assumption_valid(self):
-                    result = constraint.apply(item)
-                else:
-                    result = 'skipped'
+    def _load_constraints(self, path):
+        """
+        Load constraints from a directory containing YAML files.
 
-                self.status[constraint.name] = result
+        :param path: Directory to load constraint YAML file from.
+        """
+        cstrs = []
+        for root, _, files in os.walk(path):
+            for fname in files:
+                fpath = os.path.join(root, fname)
+                with open(fpath) as fp:
+                    cstrs.extend(yaml.load(fp))
 
+        cstrs = [Constraint.from_dict(c) for c in cstrs]
+        return cstrs
 
-class Constraint(object):
+    def _assumption_valid(self, constraint):
+        """
+        Check whether the assumption of a constraint is valid.
 
-    def __init__(self, name,
-                 depends_on=None, assume=None, target=None, tree=None):
-        self.name = name
-        self.depends_on = depends_on
-        self.assume = assume
-        self.target = target
-        self.tree = tree
-        self.fail_ratio = 0.1
-        self.traces = self._tree2traces(tree)
-
-    def assumption_valid(self, mgr):
-        if self.assume is None:
+        :param constraint: The constraint whose assumption to be checked.
+        """
+        if constraint.assume is None:
             return True
 
-        module = ast.parse(self.assume)
+        module = ast.parse(constraint.assume)
         assert len(module.body) == 1
         expr = module.body[0]
         assert isinstance(expr, ast.Expr)
@@ -65,13 +69,65 @@ class Constraint(object):
         if isinstance(right, ast.Name):
             right = right.id
 
-        if left in mgr.status:
-            left = mgr.status[left]
+        if left in self.status:
+            left = self.status[left]
 
         if op == 'Is':
             return left.lower() == right.lower()
         else:
             raise ConstraintError('Operator %s is not handled' % op)
+
+    def constrain(self, item):
+        """
+        Apply constraints to an item.
+
+        :param item: Item for constraints to apply on.
+        """
+        self.item = item
+        self.status = {c.name: 'untouched'
+                       for c in self.constraints}
+        while any(s == 'untouched' for s in self.status.values()):
+            for constraint in self.constraints:
+                if self._assumption_valid(constraint):
+                    result = constraint.apply(item)
+                else:
+                    result = 'skipped'
+
+                self.status[constraint.name] = result
+
+
+class Constraint(object):
+    """
+    Class for a constraint on specific option of test item.
+    """
+
+    def __init__(self, name,
+                 depends_on=None, assume=None, target=None, tree=None):
+        """
+        :param name: Unique string name of the constraint.
+        :param depends_on: A logical expression shows prerequisite to apply
+                           this constraint.
+        :param assume: A logical expression shows the limit of this constraint.
+        :param target: An XPath-like string shows where this constraint applies
+                       to.
+        :param tree: A block of code shows the details of this constraint.
+        """
+        self.name = name
+        self.depends_on = depends_on
+        self.assume = assume
+        self.target = target
+        self.tree = tree
+        self.fail_ratio = 0.1
+        self.traces = self._tree2traces(tree)
+
+    @classmethod
+    def from_dict(cls, data):
+        """
+        Generate a constraint instance from a dictionary
+        """
+        name = data['name']
+        del data['name']
+        return cls(name, **data)
 
     def _tree2traces(self, tree):
         def _revert_compare(node):
@@ -174,6 +230,12 @@ class Constraint(object):
             return random.choice(passes)
 
     def apply(self, item):
+        """
+        Apply this constraint to an item.
+
+        :param item: The item to be applied on.
+        :return: Expected result of constraint item.
+        """
         t = self._choose()
         sol = t.solve(item)
         patts = t.result_patts
@@ -185,23 +247,5 @@ class Constraint(object):
         item.set(self.target, sol)
         return t.result
 
-    @classmethod
-    def from_dict(cls, data):
-        name = data['name']
-        del data['name']
-        return cls(name, **data)
-
     def __repr__(self):
         return '<%s %s>' % (self.__class__.__name__, self.name)
-
-
-def load(path):
-    cstrs = []
-    for root, _, files in os.walk(path):
-        for fname in files:
-            fpath = os.path.join(root, fname)
-            with open(fpath) as fp:
-                cstrs.extend(yaml.load(fp))
-
-    cstrs = [Constraint.from_dict(c) for c in cstrs]
-    return cstrs
