@@ -11,19 +11,26 @@ logger = logging.getLogger(__name__)
 
 
 class TraceError(Exception):
-    pass
-
-
-class TraceSolveError(TraceError):
+    """
+    Class for trace specific exceptions.
+    """
     pass
 
 
 class Trace(object):
-    def __init__(self, trace):
+    """
+    Class represent a condition trace in constraint tree code.  It contains a
+    list of commands, including comparisons, operations and ends with a return
+    command.
+    """
+    def __init__(self, trace_list):
+        """
+        :param trace_list: A list contains code of the trace.
+        """
         self.item = None
         self.symbols = {}
-        self.trace = trace[:]
-        ret = trace[-1]
+        self.trace = trace_list[:]
+        ret = trace_list[-1]
         assert isinstance(ret, ast.Return)
         self.result = ret.value.func.id.lower()
         args = ret.value.args
@@ -69,7 +76,7 @@ class Trace(object):
         known_symbols = []
         for name in dir(symbol):
             obj = getattr(symbol, name)
-            if inspect.isclass(obj) and issubclass(obj, symbol.Symbol):
+            if inspect.isclass(obj) and issubclass(obj, symbol.SymbolBase):
                 known_symbols.append(name)
 
         exc_types = []
@@ -146,7 +153,7 @@ class Trace(object):
         elif op == 'NotIn':
             sleft.excs = call_ret
         else:
-            raise TraceSolveError('Unknown operator: %s' % op)
+            raise TraceError('Unknown operator: %s' % op)
 
     def _proc_call(self, node):
         func_name = node.func.id
@@ -189,6 +196,11 @@ class Trace(object):
             raise TraceError('Unknown left type %s' % left)
 
     def solve(self, item):
+        """
+        Generate a satisfiable random option according to this trace.
+        :param item: Item to which generated option applies.
+        :return: Generated random option.
+        """
         self.item = item
         self.symbols = {}
 

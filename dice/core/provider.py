@@ -11,11 +11,20 @@ logger = logging.getLogger('dice')
 
 
 class ProviderError(Exception):
+    """
+    Class for provider specific exceptions.
+    """
     pass
 
 
 class Provider(object):
+    """
+    Class for a dice test provider.
+    """
     def __init__(self, path):
+        """
+        :param path: Path of the directory this provider locates.
+        """
         if not os.path.isdir(path):
             raise ProviderError("%s is not a directory." % path)
 
@@ -82,6 +91,11 @@ class Provider(object):
             os.path.join(path, 'die'))
 
     def run_once(self):
+        """
+        Generate a new item, constrain and run it.
+
+        :return: Constrained item.
+        """
         item = self.Item()
         self.constraint_manager.constrain(item)
         item.run()
