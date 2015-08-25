@@ -41,5 +41,6 @@ setup(
     description='A random testing framework',
     scripts=['scripts/dice'],
     packages=get_packages(),
-    data_files=get_data_files(),
+    # Config file will be introduced later.
+    # Currently this does nothing but fail rtd build.
 )
