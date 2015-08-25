@@ -18,10 +18,12 @@ class ConstraintManager(object):
     """
     Manager class contains and manipulates all constraints.
     """
-    def __init__(self, path):
+    def __init__(self, provider):
         """
         :param path: Directory to load constraint YAML file from.
         """
+        self.provider = provider
+        path = os.path.join(provider.path, 'die')
         self.constraints = self._load_constraints(path)
         self.item = None
         self.status = {}
@@ -39,7 +41,7 @@ class ConstraintManager(object):
                 with open(fpath) as fp:
                     cstrs.extend(yaml.load(fp))
 
-        cstrs = [Constraint.from_dict(c) for c in cstrs]
+        cstrs = [Constraint.from_dict(self.provider, c) for c in cstrs]
         return cstrs
 
     def _assumption_valid(self, constraint):
@@ -101,7 +103,7 @@ class Constraint(object):
     Class for a constraint on specific option of test item.
     """
 
-    def __init__(self, name,
+    def __init__(self, name, provider,
                  depends_on=None, assume=None, target=None, tree=None):
         """
         :param name: Unique string name of the constraint.
@@ -113,6 +115,7 @@ class Constraint(object):
         :param tree: A block of code shows the details of this constraint.
         """
         self.name = name
+        self.provider = provider
         self.depends_on = depends_on
         self.assume = assume
         self.target = target
@@ -121,13 +124,13 @@ class Constraint(object):
         self.traces = self._tree2traces(tree)
 
     @classmethod
-    def from_dict(cls, data):
+    def from_dict(cls, provider, data):
         """
         Generate a constraint instance from a dictionary
         """
         name = data['name']
         del data['name']
-        return cls(name, **data)
+        return cls(name, provider, **data)
 
     def _tree2traces(self, tree):
         def _revert_compare(node):
@@ -190,7 +193,7 @@ class Constraint(object):
                     _parse_if(node)
                 elif isinstance(node, ast.Return):
                     cur_trace.append(node)
-                    traces.append(trace.Trace(cur_trace))
+                    traces.append(trace.Trace(self.provider, cur_trace))
                     cur_trace.pop()
                 else:
                     raise ConstraintError('Unknown node: %s' % v)

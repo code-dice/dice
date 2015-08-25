@@ -23,11 +23,12 @@ class Trace(object):
     list of commands, including comparisons, operations and ends with a return
     command.
     """
-    def __init__(self, trace_list):
+    def __init__(self, provider, trace_list):
         """
         :param trace_list: A list contains code of the trace.
         """
         self.item = None
+        self.provider = provider
         self.symbols = {}
         self.trace = trace_list[:]
         ret = trace_list[-1]
@@ -52,7 +53,7 @@ class Trace(object):
     def _exec_call(self, node):
         func_name = node.func.attr
         pkg_name = node.func.value.id
-        mod_name = '.'.join(['virsh', 'utils', pkg_name])
+        mod_name = '.'.join([self.provider.name, 'utils', pkg_name])
         mod = sys.modules[mod_name]
         func = getattr(mod, func_name)
         args = []

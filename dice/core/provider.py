@@ -87,8 +87,7 @@ class Provider(object):
                                     (mod_name, cls_name))
 
         self.Item = self.modules['%s.item' % self.name].Item
-        self.constraint_manager = constraint.ConstraintManager(
-            os.path.join(path, 'die'))
+        self.constraint_manager = constraint.ConstraintManager(self)
 
     def run_once(self):
         """
