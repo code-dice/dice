@@ -23,7 +23,7 @@ class ConstraintManager(object):
         :param path: Directory to load constraint YAML file from.
         """
         self.provider = provider
-        path = os.path.join(provider.path, 'die')
+        path = os.path.join(provider.path, 'oracles')
         self.constraints = self._load_constraints(path)
         self.item = None
         self.status = {}

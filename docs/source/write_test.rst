@@ -8,7 +8,7 @@ Anatomy of a DICE Project
 The file structure of a basic DICE project likes::
 
     project_root
-    |-- constraints
+    |-- oracles
     |   `-- pyramid.yaml
     |-- item.py
     `-- utils
@@ -16,7 +16,7 @@ The file structure of a basic DICE project likes::
 - An ``item.py`` is a python script defines how a single test item is run and pass
   the result to DICE for analysis.
 
-- The ``constraints`` directory contains one or more YAML_ files defines the
+- The ``oracles`` directory contains one or more YAML_ files defines the
   expected results for different conditions.
 
 - The optional ``utils`` directory contains python helper modules to assist
@@ -32,20 +32,20 @@ core API:
 .. literalinclude:: ../../examples/pyramid/item.py
 
 
-Writing Constraint
-==================
+Writing Oracle
+==============
 
-An example constraint YAML_ file likes:
+An example oracle YAML_ file likes:
 
-.. literalinclude:: ../../examples/pyramid/die/pyramid.yaml
+.. literalinclude:: ../../examples/pyramid/oracles/pyramid.yaml
     :language: yaml
 
-Every constraint YAML_ file contains a list of constraint objects. For each
-constraint, there is some predefined properties.
+Every oracle YAML_ file contains a list of oracle objects. For each
+oracle, there is some predefined properties.
 
-- ``name`` is the identifier of a specific constraint. It is recommended in
+- ``name`` is the identifier of a specific oracle. It is recommended in
   CamelCase style to be differentiated from other variables.
-- ``target`` is where this constraint is applied to for the test item.
+- ``target`` is where this oracle is applied to for the test item.
 - ``tree`` is a python style code snippet shows the expected result for a given
   conditions.
 
