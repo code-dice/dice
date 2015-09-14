@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+"""
+DICE is a black-box random testing framework. It aims to help testers random
+ testing a project while exploring its feature by writing some constraints.
+"""
 
 import os
 
@@ -39,6 +43,7 @@ setup(
     author='Hao Liu',
     author_email='hliu@redhat.com',
     description='A random testing framework',
+    long_description=__doc__,
     scripts=['scripts/dice'],
     packages=get_packages(),
     # Config file will be introduced later.
