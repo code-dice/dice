@@ -284,7 +284,8 @@ class DiceApp(object):
         Iteratively run tests.
         """
         while not self.exiting:
-            item = random.choice(self.providers.values()).run_once()
+            item = random.choice(self.providers.values()).generate()
+            item.run()
             self.last_item = item
 
             if self.args.server is not None:

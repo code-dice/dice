@@ -89,13 +89,12 @@ class Provider(object):
         self.Item = self.modules['%s.item' % self.name].Item
         self.constraint_manager = constraint.ConstraintManager(self)
 
-    def run_once(self):
+    def generate(self):
         """
-        Generate a new item, constrain and run it.
+        Generate a new constrained test item.
 
         :return: Constrained item.
         """
         item = self.Item()
         self.constraint_manager.constrain(item)
-        item.run()
         return item
