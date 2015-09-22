@@ -112,15 +112,15 @@ class Trace(object):
         if left not in self.symbols:
             self.symbols[left] = getattr(
                 symbol, sym_type)(exc_types=[exc_types])
-        else:
-            sleft = self.symbols[left]
-            sleft_type = sleft.__class__.__name__
 
-            if op != 'IsNot':
-                if not issubclass(sleft.__class__, getattr(symbol, sym_type)):
-                    raise TraceError(
-                        'Unmatched type %s(operator: %s). Should be %s' %
-                        (sym_type, op, sleft_type))
+        sleft = self.symbols[left]
+        sleft_type = sleft.__class__.__name__
+
+        if op != 'IsNot':
+            if not issubclass(sleft.__class__, getattr(symbol, sym_type)):
+                raise TraceError(
+                    'Unmatched type %s(operator: %s). Should be %s' %
+                    (sym_type, op, sleft_type))
 
         if op == 'Is':
             pass
