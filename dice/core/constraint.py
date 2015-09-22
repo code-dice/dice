@@ -238,6 +238,17 @@ class Constraint(object):
 
         if fail_ratio is None:
             fail_ratio = self.fail_ratio
+
+        if not fails and not passes:
+            raise ConstraintError(
+                "Need return function fail() or success() in oracle '%s'" %
+                self.name)
+
+        if not fails:
+            return random.choice(passes)
+        if not passes:
+            return random.choice(fails)
+
         if random.random() < fail_ratio:
             return random.choice(fails)
         else:
