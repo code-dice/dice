@@ -199,10 +199,15 @@ class Constraint(object):
             _parse_block(node.orelse)
             cur_trace.pop()
 
+        def _parse_assert(node):
+            cur_trace.append(node.test)
+
         def _parse_block(nodes):
             for node in nodes:
                 if isinstance(node, ast.If):
                     _parse_if(node)
+                elif isinstance(node, ast.Assert):
+                    _parse_assert(node)
                 elif isinstance(node, ast.Return):
                     cur_trace.append(node)
                     traces.append(trace.Trace(self.provider, cur_trace))
