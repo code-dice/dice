@@ -19,7 +19,7 @@ class TraceError(Exception):
 
 class Trace(object):
     """
-    Class represent a condition trace in constraint tree code.  It contains a
+    Class represent a condition trace in constraint oracle code. It contains a
     list of commands, including comparisons, operations and ends with a return
     command.
     """

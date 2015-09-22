@@ -50,10 +50,10 @@ class ConstraintManager(object):
 
         :param constraint: The constraint whose assumption to be checked.
         """
-        if constraint.assume is None:
+        if constraint.require is None:
             return True
 
-        module = ast.parse(constraint.assume)
+        module = ast.parse(constraint.require)
         assert len(module.body) == 1
         expr = module.body[0]
         assert isinstance(expr, ast.Expr)
@@ -104,24 +104,22 @@ class Constraint(object):
     """
 
     def __init__(self, name, provider,
-                 depends_on=None, assume=None, target=None, tree=None):
+                 depends_on=None, require=None, path=None, oracle=None):
         """
         :param name: Unique string name of the constraint.
         :param depends_on: A logical expression shows prerequisite to apply
                            this constraint.
-        :param assume: A logical expression shows the limit of this constraint.
-        :param target: An XPath-like string shows where this constraint applies
-                       to.
-        :param tree: A block of code shows the details of this constraint.
+        :param require: Logical expression shows the limit of this constraint.
+        :param oracle: A block of code shows the details of this constraint.
         """
         self.name = name
         self.provider = provider
         self.depends_on = depends_on
-        self.assume = assume
-        self.target = target
-        self.tree = tree
+        self.require = require
+        self.path = path
+        self.oracle = oracle
         self.fail_ratio = 0.1
-        self.traces = self._tree2traces(tree)
+        self.traces = self._oracle2traces(oracle)
 
     @classmethod
     def from_dict(cls, provider, data):
@@ -132,7 +130,7 @@ class Constraint(object):
         del data['name']
         return cls(name, provider, **data)
 
-    def _tree2traces(self, tree):
+    def _oracle2traces(self, oracle):
         def _revert_compare(node):
             """
             Helper function to revert a compare node to its negation.
@@ -198,7 +196,7 @@ class Constraint(object):
                 else:
                     raise ConstraintError('Unknown node: %s' % v)
 
-        root = ast.parse(tree)
+        root = ast.parse(oracle)
         stack = []
         stack.append((root))
         observed = []
@@ -247,7 +245,7 @@ class Constraint(object):
                 item.fail_patts |= patts
             else:
                 item.fail_patts.add(patts)
-        item.set(self.target, sol)
+        item.set(self.path, sol)
         return t.result
 
     def __repr__(self):

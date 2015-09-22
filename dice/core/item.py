@@ -20,20 +20,20 @@ class ItemBase(object):
         raise NotImplementedError("run() not implemented for class '%s'" %
                                   self.__class__.__name__)
 
-    def set(self, target, value):
+    def set(self, path, value):
         """
         Set value for specific item option.
 
-        :param target: An XPath-like string for the setting target.
+        :param path: An XPath-like string for the setting target.
         :param value: Option value to be set.
         """
-        setattr(self, target, value)
+        setattr(self, path, value)
 
-    def get(self, target):
+    def get(self, path):
         """
         Get value for specific item option.
 
-        :param target: An XPath-like string for the getting target.
+        :param path: An XPath-like string for the getting target.
         :return: Option value got.
         """
-        return getattr(self, target, None)
+        return getattr(self, path, None)
