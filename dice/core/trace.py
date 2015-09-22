@@ -211,7 +211,9 @@ class Trace(object):
             elif isinstance(node, ast.Call):
                 self._proc_call(node)
             elif isinstance(node, ast.Return):
-                res_self = self.symbols['self'].model()
-                return res_self
+                result = {}
+                for name, sym in self.symbols.items():
+                    result[name] = sym.model()
+                return result
             else:
                 raise TraceError('Unknown node type: %s' % type(node))

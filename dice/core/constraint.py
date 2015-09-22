@@ -2,6 +2,7 @@ import ast
 import copy
 import os
 import random
+import re
 import yaml
 
 from . import trace
@@ -102,9 +103,10 @@ class Constraint(object):
     """
     Class for a constraint on specific option of test item.
     """
+    path_prefix = 'DPATH'
 
     def __init__(self, name, provider,
-                 depends_on=None, require=None, path=None, oracle=None):
+                 depends_on=None, require=None, oracle=None):
         """
         :param name: Unique string name of the constraint.
         :param depends_on: A logical expression shows prerequisite to apply
@@ -116,7 +118,6 @@ class Constraint(object):
         self.provider = provider
         self.depends_on = depends_on
         self.require = require
-        self.path = path
         self.oracle = oracle
         self.fail_ratio = 0.1
         self.traces = self._oracle2traces(oracle)
@@ -131,6 +132,18 @@ class Constraint(object):
         return cls(name, provider, **data)
 
     def _oracle2traces(self, oracle):
+        def _translate(oracle):
+            def _repl(match):
+                return '%s_%s' % (self.path_prefix,
+                                  match.groups()[2].replace('/', '_'))
+
+            lines = []
+            for line in oracle.splitlines():
+                # Replace a word begin with a slash
+                line = re.sub(r'((^)|(?<=\W))/([\w/]+)', _repl, line)
+                lines.append(line)
+            return '\n'.join(lines)
+
         def _revert_compare(node):
             """
             Helper function to revert a compare node to its negation.
@@ -209,6 +222,8 @@ class Constraint(object):
             else:
                 _parse_block(v.body)
 
+        oracle = _translate(oracle)
+
         root = ast.parse(oracle)
         stack = []
         stack.append((root))
@@ -261,15 +276,23 @@ class Constraint(object):
         :param item: The item to be applied on.
         :return: Expected result of constraint item.
         """
+        def _name2path(name):
+            if not name.startswith(self.path_prefix):
+                raise ConstraintError(
+                    "Solution %s is not a path variable" % name)
+            return name[len(self.path_prefix):].replace('_', '/')
+
         t = self._choose()
-        sol = t.solve(item)
+        sols = t.solve(item)
+        for name, sol in sols.items():
+            item.set(_name2path(name), sol)
+
         patts = t.result_patts
         if patts is not None:
             if isinstance(patts, list):
                 item.fail_patts |= patts
             else:
                 item.fail_patts.add(patts)
-        item.set(self.path, sol)
         return t.result
 
     def __repr__(self):
