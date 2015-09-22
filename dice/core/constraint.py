@@ -196,6 +196,19 @@ class Constraint(object):
                 else:
                     raise ConstraintError('Unknown node: %s' % node)
 
+        def _parse_module(node):
+            # Accept a single expression to define the only valid condition
+            if isinstance(node.body[0], ast.Expr):
+                assert len(node.body) == 1
+                cur_trace.append(node.body[0].value)
+                ret = ast.parse('return success()').body[0]
+                cur_trace.append(ret)
+                traces.append(trace.Trace(self.provider, cur_trace))
+                cur_trace.pop()
+                cur_trace.pop()
+            else:
+                _parse_block(v.body)
+
         root = ast.parse(oracle)
         stack = []
         stack.append((root))
@@ -208,7 +221,7 @@ class Constraint(object):
                 if isinstance(v, ast.If):
                     _parse_if(v)
                 elif isinstance(v, ast.Module):
-                    _parse_block(v.body)
+                    _parse_module(v)
                 else:
                     raise ConstraintError('Unknown node: %s' % v)
         return traces
@@ -218,7 +231,7 @@ class Constraint(object):
         passes = []
 
         for t in self.traces:
-            if t.result == 'pass':
+            if t.result == 'success':
                 passes.append(t)
             elif t.result == 'fail':
                 fails.append(t)
