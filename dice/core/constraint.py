@@ -194,7 +194,7 @@ class Constraint(object):
                     traces.append(trace.Trace(self.provider, cur_trace))
                     cur_trace.pop()
                 else:
-                    raise ConstraintError('Unknown node: %s' % v)
+                    raise ConstraintError('Unknown node: %s' % node)
 
         root = ast.parse(oracle)
         stack = []
