@@ -184,7 +184,8 @@ class Constraint(object):
             elif isinstance(rev_node, ast.Compare):
                 rev_node = _revert_compare(node)
             else:
-                raise ConstraintError('Unknown test node: %s' % node)
+                raise ConstraintError(
+                    'Unknown test node type: %s' % node.__class__.__name__)
             return rev_node
 
         def _parse_if(node):
@@ -207,7 +208,8 @@ class Constraint(object):
                     traces.append(trace.Trace(self.provider, cur_trace))
                     cur_trace.pop()
                 else:
-                    raise ConstraintError('Unknown node: %s' % node)
+                    raise ConstraintError(
+                        'Unknown node type: %s' % node.__class__.__name__)
 
         def _parse_module(node):
             # Accept a single expression to define the only valid condition
@@ -238,7 +240,8 @@ class Constraint(object):
                 elif isinstance(v, ast.Module):
                     _parse_module(v)
                 else:
-                    raise ConstraintError('Unknown node: %s' % v)
+                    raise ConstraintError(
+                        'Unknown node type: %s' % v.__class__.__name__)
         return traces
 
     def _choose(self, fail_ratio=None):
