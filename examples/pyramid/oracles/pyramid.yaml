@@ -1,14 +1,13 @@
 - name: option
-  target: option
-  tree: |
-      if self is Integer:
-          if self < 0:
+  oracle: |
+      if option is Integer:
+          if option < 0:
               return FAIL('Min input is 0')
-          elif self > 9223372036854775808:
+          elif option > 9223372036854775808:
               return FAIL('Number overflow')
-          elif self > 1000:
+          elif option > 1000:
               return FAIL('Max input is 1000')
           else:
-              return PASS()
+              return SUCCESS()
       else:
           return FAIL('Invalid number')
