@@ -45,6 +45,8 @@ class Trace(object):
         for line in self.trace:
             if isinstance(line, ast.Compare):
                 s = str(line.ops[0].__class__.__name__)
+            elif isinstance(line, ast.Call):
+                s = line.func.id
             else:
                 s = line.value.func.id
             lines.append(s)
