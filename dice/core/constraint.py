@@ -286,8 +286,7 @@ class Constraint(object):
         """
         def _name2path(name):
             if not name.startswith(self.path_prefix):
-                raise ConstraintError(
-                    "Solution %s is not a path variable" % name)
+                return name
             return name[len(self.path_prefix):].replace('_', '/')
 
         t = self._choose()
