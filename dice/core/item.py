@@ -9,7 +9,8 @@ class ItemBase(object):
     """
     Base class for an item. This should be overridden in the providers item.py.
     """
-    def __init__(self):
+    def __init__(self, provider):
+        self.provider = provider
         self.res = ''
         self.fail_patts = set()
 
