@@ -30,7 +30,7 @@ def info(exctype, value, tb):
 # Override exception hook to jump into pdb when exception
 sys.excepthook = info
 
-# pylint: disable=import-error
+# pylint: disable=import-error,no-name-in-module
 from dice.client import DiceApp  # NOQA
 
 if __name__ == '__main__':

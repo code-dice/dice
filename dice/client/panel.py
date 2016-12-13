@@ -198,6 +198,7 @@ class ListPanel(_PanelBase):
             cat_name = None
             item_idx = None
             if self.catalogs:
+                # pylint: disable=unsubscriptable-object
                 cat_name = self.catalogs.keys()[0]
                 items = self.catalogs[cat_name].items
                 if items:
@@ -244,6 +245,7 @@ class ListPanel(_PanelBase):
         if key == ord('j'):
             cat_name, item_idx = self.cur_key
 
+            # pylint: disable=unsubscriptable-object
             cats = self.catalogs.keys()
 
             cat = self.catalogs[cat_name]
@@ -257,6 +259,7 @@ class ListPanel(_PanelBase):
         elif key == ord('k'):
             cat_name, item_idx = self.cur_key
 
+            # pylint: disable=unsubscriptable-object
             cats = self.catalogs.keys()
 
             cat = self.catalogs[cat_name]

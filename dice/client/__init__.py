@@ -15,8 +15,8 @@ import traceback
 import threading
 import time
 
-from dice.core import provider
-from dice.utils import rnd
+from ..core import provider
+from ..utils import rnd
 
 from . import window
 
