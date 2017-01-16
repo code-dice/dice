@@ -53,7 +53,7 @@ class Bytes(SymbolBase):
         """
         Generate a random bytes string.
         """
-        cnt = int(random.expovariate(0.1))
+        cnt = int(random.weibullvariate(65535, 1))
         return ''.join(bt for bt in os.urandom(cnt) if bt != b'\x00')
 
 
@@ -65,7 +65,7 @@ class NonEmptyBytes(Bytes):
         """
         Generate a random non-empty bytes string.
         """
-        cnt = int(random.expovariate(0.1)) + 1
+        cnt = int(random.weibullvariate(65535, 1)) + 1
         return ''.join(bt for bt in os.urandom(cnt) if bt != b'\x00')
 
 
@@ -77,7 +77,7 @@ class String(Bytes):
         """
         Generate a random printable string.
         """
-        cnt = int(random.expovariate(0.1))
+        cnt = int(random.weibullvariate(20, 1.8))
         return ''.join(random.choice(string.printable) for _ in range(cnt))
 
 
@@ -98,14 +98,14 @@ class StringList(SymbolBase):
         """
         Generate a random printable strings.
         """
-        cnt = int(random.expovariate(0.1))
+        cnt = int(random.weibullvariate(20, 1.8))
         return ''.join(random.choice(string.printable) for _ in range(cnt))
 
     def model(self):
         """
         Generate a random-numbered list contains random printable strings.
         """
-        cnt = int(random.expovariate(0.1))
+        cnt = int(random.weibullvariate(20, 1.8))
         res = set()
         for _ in range(cnt):
             entry = None
