@@ -27,6 +27,7 @@ def info(exctype, value, tb):
         # ...then start the debugger in post-mortem mode.
         pdb.pm()
 
+
 # Override exception hook to jump into pdb when exception
 sys.excepthook = info
 

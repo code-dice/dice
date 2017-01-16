@@ -97,6 +97,7 @@ def text(min_len=5, max_len=10, charset=None, excludes=None):
 
     return result_str
 
+
 ALL_CHARS = set(string.ascii_letters) - set('&\'"<>')
 # ALL_CHARS = set(string.printable)
 

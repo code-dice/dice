@@ -10,8 +10,8 @@ The file structure of a basic DICE project likes::
     project_root
     |-- oracles
     |   `-- pyramid.yaml
-    |-- item.py
     `-- utils
+        `-- item.py
 
 - An ``item.py`` is a python script defines how a single test item is run and pass
   the result to DICE for analysis.
@@ -29,8 +29,7 @@ Writing Test Runner
 ``item.py`` contains a class ``Item`` inherits from ``dice.item`` class from DICE`s
 core API:
 
-.. literalinclude:: ../../examples/pyramid/item.py
-
+.. literalinclude:: ../../examples/pyramid/utils/item.py
 
 Writing Oracle
 ==============
